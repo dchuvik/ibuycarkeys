@@ -1,271 +1,101 @@
 ---
-import { Image } from "astro:assets";
 import Layout from "~/layouts/Layout.astro";
 import Section from "~/components/Section.astro";
 import Container from "~/components/Container.astro";
-import Button from "~/components/Button.astro";
-import Hero from "~/components/Hero.astro";
-import Faq from "~/components/Faq.astro";
 import Heading from "~/components/Heading.astro";
-import WidgetSearch from "~/components/WidgetSearch.astro";
-import Grid from "~/components/Grid.astro";
-import GridItem from "~/components/GridItem.astro";
-import ShowPosts from "~/components/ShowPosts.astro";
-import Team from "~/components/Team.astro";
-import Stats from "~/components/Stats.astro";
-
-// Images
-import ImageCarDealer from "~/assets/images/pexels-shkrabaanthony-7144179.jpg";
-import ImageHeadingBackground from "~/assets/images/pexels-jeshoots-com-147458-451590.jpg";
-import ShowCars from "~/components/ShowCars.astro";
-import ImageOne from "~/assets/images/pexels-leif-bergerson-99376750-9764731.webp";
-import ImageTwo from "~/assets/images/pexels-zenzazione-2922140.webp";
+import KeyQuoteBuilder from "~/components/forms/KeyQuoteBuilder.astro";
+import PriceCatalog from "~/components/PriceCatalog.astro";
+import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
 ---
 
-<Layout pageTitle="Home">
-	{/* Main Heading */}
-	<Section class:list={"relative"}>
-		<Image
-			src={ImageHeadingBackground}
-			alt="Heading background"
-			class:list={"absolute inset-0 w-full h-full object-cover"}
-		/>
-		<div class="absolute inset-0 w-full h-full object-cover bg-gray-800/80"></div>
-		<Container class:list={"relative z-10"}>
-			<Heading class:list={"prose-invert max-w-4xl"}>
-				<h1 slot="heading-title" class="mb-0 lg:text-7xl text-balance">
-					Find your next car in our exclusive collection
-				</h1>
-				<p slot="heading-content">
-					Search for your next car here. We have a wide range of cars for sale. Browse through our collection
-					and find the perfect car that suits your needs and budget.
-				</p>
-			</Heading>
-			<WidgetSearch />
+<Layout
+	pageTitle="Sell Your Car Keys"
+	title="Sell Your Car Keys"
+	description="Get an instant payout quote for used car keys, build a quote cart, and keep track of every key entered."
+>
+	<Section class:list={"bg-gradient-to-br from-amber-100 via-white to-yellow-50"}>
+		<Container>
+			<div class="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center">
+				<div class="prose max-w-3xl">
+					<p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">
+						Car key buying quotes
+					</p>
+					<h1 class="mb-4 text-balance">Turn loose car keys into a fast payout quote</h1>
+					<p>
+						This version of the template is now set up for buying car keys. Customers can search the real SKU
+						price list, choose the exact item, set quantity, and build a running quote cart that totals the
+						payout instantly.
+					</p>
+				</div>
+
+				<div class="grid grid-cols-1 gap-4 rounded-3xl bg-gray-900 p-6 text-white shadow-xl sm:grid-cols-3">
+					<div>
+						<p class="text-sm text-gray-300">Supported makes</p>
+						<p class="mt-2 text-4xl font-bold text-amber-300">{priceCatalogMakes.length}</p>
+					</div>
+					<div>
+						<p class="text-sm text-gray-300">SKU items</p>
+						<p class="mt-2 text-4xl font-bold text-amber-300">{priceCatalog.length}</p>
+					</div>
+					<div>
+						<p class="text-sm text-gray-300">Highest payout</p>
+						<p class="mt-2 text-4xl font-bold text-amber-300">$60</p>
+					</div>
+				</div>
+			</div>
 		</Container>
 	</Section>
 
-	{/* Hero */}
 	<Section>
 		<Container>
-			<Hero>
-				<div slot="hero-left" class="prose lg:max-w-2xl">
-					<h2>Welcome to our car dealer!</h2>
-					<p>
-						Find your next car here. We have a wide range of cars for sale. Browse through our collection
-						and find the perfect car that suits your needs and budget.
-					</p>
-
-					<Button href="/cars" class:list={"mt-4"}>View all cars</Button>
-				</div>
-				<div slot="hero-right">
-					<Image src={ImageCarDealer} alt="Car dealer" />
-				</div>
-			</Hero>
+			<KeyQuoteBuilder />
 		</Container>
 	</Section>
 
-	{/* Grid */}
-	<Section>
-		<Container>
-			<Grid>
-				<GridItem image={ImageOne} imageAlt="Car dealer" span={2} link="/cars" As="a" xl>
-					<h2>Featured cars</h2>
-					<p>
-						Discover the ultimate driving experience with our exclusive collection of featured cars. Whether
-						you're looking for a sleek sports car, a reliable family vehicle, or an eco-friendly hybrid, we
-						have something for everyone. Our extensive inventory is carefully curated to ensure that you
-						find the perfect match for your lifestyle and budget.
-					</p>
-					<Button As="button" type="button" color="white-outline" class:list={"mt-4 group-hover:bg-white/10"}
-						>View all cars</Button
-					>
-				</GridItem>
-
-				<GridItem image={ImageTwo} imageAlt="Car dealer" link="/cars" As="a">
-					<h3>Featured cars</h3>
-					<p>
-						Discover the ultimate driving experience with our exclusive collection of featured cars. Whether
-						you're looking for a sleek sports car, a reliable family vehicle, or an eco-friendly hybrid, we
-						have something for everyone.
-					</p>
-					<Button As="button" type="button" color="white-outline" class:list={"mt-4 group-hover:bg-white/10"}
-						>View all cars</Button
-					>
-				</GridItem>
-
-				<GridItem>
-					<h3>Featured cars</h3>
-					<p>
-						Discover the ultimate driving experience with our exclusive collection of featured cars. Whether
-						you're looking for a sleek sports car, a reliable family vehicle, or an eco-friendly hybrid, we
-						have something for everyone.
-					</p>
-				</GridItem>
-			</Grid>
-		</Container>
-	</Section>
-
-	{/* Hero */}
 	<Section class:list={"bg-gray-50"}>
 		<Container>
-			<Hero invert>
-				<div slot="hero-left" class="prose lg:max-w-2xl">
-					<h2>Welcome to our car dealer!</h2>
-					<p>
-						Find your next car here. We have a wide range of cars for sale. Browse through our collection
-						and find the perfect car that suits your needs and budget.
-					</p>
-				</div>
-				<div slot="hero-right">
-					<Image src={ImageCarDealer} alt="Car dealer" />
-				</div>
-			</Hero>
+			<PriceCatalog />
 		</Container>
 	</Section>
 
-	{/* Cars */}
-	<Section class:list={"bg-blue-50"}>
-		<Container>
-			<Heading>
-				<h2 slot="heading-title" class="mb-0">Featured cars</h2>
-				<p slot="heading-content">
-					Search for your next car here. We have a wide range of cars for sale. Browse through our collection
-					and find the perfect car that suits your needs and budget.
-				</p>
-			</Heading>
-
-			<ShowCars slugs={["audi-tt-coupe", "porsche-911", "volkswagen-polo-gti"]} />
-		</Container>
-	</Section>
-
-	{/* Stats */}
-	<Section>
-		<Container>
-			<Heading class:list={"text-center mx-auto"}>
-				<h2 slot="heading-title" class="text-balance">Why choose us?</h2>
-				<p slot="heading-content">
-					We are the leading car dealer in the country. With over 20 years of experience, we have helped
-					thousands of customers find their dream car.
-				</p>
-			</Heading>
-
-			<Stats
-				items={[
-					{
-						title: "Cars in stock",
-						value: "259",
-						animateNumber: true,
-						animateFrom: 100,
-					},
-					{
-						title: "Satified customers",
-						value: "1088",
-						animateNumber: true,
-						animateFrom: 800,
-					},
-					{
-						title: "Experience",
-						value: "20+ years",
-					},
-				]}
-			/>
-		</Container>
-	</Section>
-
-	{/* CTA */}
-	<Section class:list={"bg-gradient-to-br from-gray-900 to-gray-700"}>
-		<Container>
-			<Heading class:list={"mb-0 lg:mb-0 prose-invert text-center mx-auto"}>
-				<h2 slot="heading-title">Can't find the ideal car?</h2>
-
-				<p slot="heading-content">
-					Our team is here to help you find the perfect car that suits your needs and budget. Whether you're
-					looking for a sleek sports car, a reliable family vehicle, or an eco-friendly hybrid, we have
-					something for everyone.
-				</p>
-
-				<Button href="/contact" color="white" class:list={"mt-8"}>Contact us</Button>
-			</Heading>
-		</Container>
-	</Section>
-
-	{/* Cars */}
-	<Section class:list={"bg-gray-50"}>
-		<Container>
-			<Heading>
-				<h2 slot="heading-title" class="mb-0">Recent cars</h2>
-				<p slot="heading-content">
-					Search for your next car here. We have a wide range of cars for sale. Browse through our collection
-					and find the perfect car that suits your needs and budget.
-				</p>
-			</Heading>
-
-			<ShowCars ui="grid" slugs={["audi-tt-coupe", "porsche-911", "volkswagen-polo-gti"]} />
-		</Container>
-	</Section>
-
-	{/* News */}
-	<Section>
+	<Section id="how-it-works" class:list={"bg-gray-50"}>
 		<Container>
 			<Heading class:list={"max-w-3xl"}>
-				<h2 slot="heading-title">Latest news</h2>
-
+				<h2 slot="heading-title">How the quote workflow works</h2>
 				<p slot="heading-content">
-					Stay up to date with the latest news and updates from our car dealer. Read our blog posts to learn
-					more about our featured cars, special offers, and industry news.
+					The site now behaves like a lightweight buying cart. Each key entry stays in the browser until the
+					customer removes it or clears the cart, so they can build up a full quote across multiple vehicles.
 				</p>
 			</Heading>
 
-			<ShowPosts />
-		</Container>
-	</Section>
+			<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+				<div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+					<p class="text-sm font-semibold uppercase tracking-[0.15em] text-amber-700">1. Select</p>
+					<h3 class="mt-3 text-2xl font-bold">Search the actual SKU catalog</h3>
+					<p class="mt-3 text-gray-600">
+						Users can search by SKU, FCC ID, or description and then narrow the list by make before choosing
+						the exact key they want to quote.
+					</p>
+				</div>
 
-	{/* FAQ */}
-	<Section class:list={"bg-gray-50"}>
-		<Container>
-			<Heading class:list={"max-w-3xl mx-auto lg:text-center"}>
-				<h2 slot="heading-title">Welcome to our car dealer!</h2>
+				<div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+					<p class="text-sm font-semibold uppercase tracking-[0.15em] text-amber-700">2. Price</p>
+					<h3 class="mt-3 text-2xl font-bold">Use standard or worn pricing</h3>
+					<p class="mt-3 text-gray-600">
+						The form can apply either the standard payout or the worn payout when that lower condition price
+						exists in your list.
+					</p>
+				</div>
 
-				<p slot="heading-content">
-					Find your next car here. We have a wide range of cars for sale. Browse through our collection and
-					find the perfect car that suits your needs and budget.
-				</p>
-			</Heading>
-
-			<Faq
-				items={[
-					{
-						question: "What's the best thing about Switzerland?",
-						answer: "I don't know, but the flag is a big plus. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas cupiditate laboriosam fugiat.",
-					},
-					{
-						question: "What do you call a fake noodle?",
-						answer: "An impasta. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas cupiditate laboriosam fugiat.",
-					},
-					{
-						question: "What do you call a belt made out of watches?",
-						answer: "A waist of time. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas cupiditate laboriosam fugiat.",
-					},
-				]}
-			/>
-		</Container>
-	</Section>
-
-	{/* Team */}
-	<Section>
-		<Container>
-			<Heading class:list={"max-w-3xl mx-auto lg:text-center"}>
-				<h2 slot="heading-title">Our team</h2>
-
-				<p slot="heading-content">
-					Meet the team behind our car dealer. Our dedicated staff is here to help you find the perfect car
-					that suits your needs and budget. Whether you're looking for a sleek sports car, a reliable family
-					vehicle, or an eco-friendly hybrid, we have something for everyone.
-				</p>
-			</Heading>
-
-			<Team />
+				<div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+					<p class="text-sm font-semibold uppercase tracking-[0.15em] text-amber-700">3. Track</p>
+					<h3 class="mt-3 text-2xl font-bold">Keep every key in the quote cart</h3>
+					<p class="mt-3 text-gray-600">
+						The cart stores each entry locally in the browser and keeps a running total payout for the full
+						batch of keys.
+					</p>
+				</div>
+			</div>
 		</Container>
 	</Section>
 </Layout>

@@ -7,30 +7,14 @@ export const menuMain: MainMenuItem[] = [
 		url: "/",
 	},
 	{
-		id: "cars",
-		label: "Cars",
-		url: "/cars",
+		id: "how-it-works",
+		label: "How It Works",
+		url: "/#how-it-works",
 	},
 	{
-		id: "about",
-		label: "About",
-		url: "/about-us",
-		submenu: [{ id: "testimonials", label: "Testimonials", url: "/about-us/testimonials" }],
-	},
-	{
-		id: "services",
-		label: "Services",
-		url: "/services",
-		submenu: [
-			{ id: "repairs", label: "Repairs", url: "/services/repairs" },
-			{ id: "maintenance", label: "Maintenance", url: "/services/maintenance" },
-			{ id: "car-sales", label: "Car Sales", url: "/services/car-sales" },
-		],
-	},
-	{
-		id: "blog",
-		label: "Blog",
-		url: "/blog",
+		id: "makes",
+		label: "Supported Makes",
+		url: "/makes",
 	},
 ];
 
@@ -42,68 +26,48 @@ export const menuNavigation: MenuNavigation = {
 			url: "/",
 		},
 		{
-			name: "Cars",
-			url: "/cars",
+			name: "How It Works",
+			url: "/#how-it-works",
 		},
 		{
-			name: "About Us",
-			url: "/about-us",
+			name: "Supported Makes",
+			url: "/makes",
 		},
 		{
-			name: "Services",
-			url: "/services",
-		},
-		{
-			name: "Blog",
-			url: "/blog",
+			name: "Contact",
+			url: "/contact",
 		},
 	],
 };
 
 export const menuService: MenuNavigation = {
-	prettyName: "Service",
+	prettyName: "Quote Tools",
 	items: [
 		{
-			name: "Home",
+			name: "Start A Quote",
 			url: "/",
 		},
 		{
-			name: "Cars",
-			url: "/cars",
+			name: "Supported Makes",
+			url: "/makes",
 		},
 		{
-			name: "About Us",
-			url: "/about-us",
-		},
-		{
-			name: "Services",
-			url: "/services",
-		},
-		{
-			name: "Blog",
-			url: "/blog",
+			name: "Contact",
+			url: "/contact",
 		},
 	],
 };
 
 export const menuMisc: MenuNavigation = {
-	prettyName: "Miscellaneous",
+	prettyName: "Company",
 	items: [
-		{
-			name: "Home",
-			url: "/",
-		},
-		{
-			name: "Cars",
-			url: "/cars",
-		},
 		{
 			name: "About Us",
 			url: "/about-us",
 		},
 		{
-			name: "Services",
-			url: "/services",
+			name: "Testimonials",
+			url: "/about-us/testimonials",
 		},
 		{
 			name: "Blog",
@@ -116,24 +80,12 @@ export const menuLegal: MenuNavigation = {
 	prettyName: "Legal",
 	items: [
 		{
-			name: "Home",
-			url: "/",
+			name: "Terms",
+			url: "/contact",
 		},
 		{
-			name: "Cars",
-			url: "/cars",
-		},
-		{
-			name: "About Us",
-			url: "/about-us",
-		},
-		{
-			name: "Services",
-			url: "/services",
-		},
-		{
-			name: "Blog",
-			url: "/blog",
+			name: "Privacy",
+			url: "/contact",
 		},
 	],
 };

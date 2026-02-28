@@ -1,14 +1,11 @@
 ---
-import { getCollection } from "astro:content";
-
 import Layout from "~/layouts/Layout.astro";
 import Section from "~/components/Section.astro";
 import Container from "~/components/Container.astro";
 import Heading from "~/components/Heading.astro";
+import { priceCatalogMakes } from "~/data/priceCatalog";
 
-const allCars = await getCollection("cars", ({ data }) => !data.misc?.hidden);
-const uniqueMakes = [...new Set(allCars.map((car) => car.data.general.make))];
-uniqueMakes.sort((a, b) => a.localeCompare(b));
+const uniqueMakes = [...priceCatalogMakes];
 
 const groupedMakes: Record<string, string[]> = uniqueMakes.reduce(
 	(acc, make) => {
@@ -27,11 +24,11 @@ const groupedMakes: Record<string, string[]> = uniqueMakes.reduce(
 	<Section class:list={"bg-white"}>
 		<Container class:list={"max-w-3xl"}>
 			<Heading>
-				<h1 slot="heading-title">Makes</h1>
+				<h1 slot="heading-title">Supported Makes</h1>
 
 				<p class="-mb-16" slot="heading-content">
-					Explore our range of makes for sale. We have a wide range of makes available to suit all budgets and
-					lifestyles.
+					These are the common vehicle brands currently included in the quote builder. If a customer has a
+					different make, they can still choose "Other" in the form.
 				</p>
 			</Heading>
 		</Container>
@@ -49,9 +46,7 @@ const groupedMakes: Record<string, string[]> = uniqueMakes.reduce(
 									<h2 class="text-xl font-bold mt-4">{letter}</h2>
 									<ul>
 										{groupedMakes[letter].map((make) => (
-											<li>
-												<a href={`/cars/?make=${encodeURIComponent(make)}`}>{make}</a>
-											</li>
+											<li>{make}</li>
 										))}
 									</ul>
 								</li>

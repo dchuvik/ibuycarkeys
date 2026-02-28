@@ -1,6 +1,7 @@
 ---
 import { menuMain } from "~/data/menus";
 import IconLogo from "~/assets/images/icons/logo.svg";
+import { siteName } from "~/data/config";
 const rmTrailingSlash = (path: string): string => {
 	return path.endsWith("/") && path.length > 1 ? path.slice(0, path.length - 1) : path;
 };
@@ -15,7 +16,7 @@ const pathname = rmTrailingSlash(Astro.url.pathname);
 				<a href="/">
 					<div class="flex items-center gap-x-2">
 						<IconLogo class="h-5 lg:h-8 inline-block" />
-						<span class="font-bold text-2xl lg:text-4xl">Hyper<span class="font-normal">Drive</span></span>
+						<span class="font-bold text-2xl lg:text-4xl">{siteName}</span>
 					</div>
 				</a>
 
