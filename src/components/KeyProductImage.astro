@@ -1,0 +1,16 @@
+---
+import { Image } from "astro:assets";
+import AcuraKeyImage from "~/assets/images/Keys/ACU.1_ACU.1W.webp";
+---
+
+<div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-100 via-yellow-50 to-white p-4">
+	<div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(245,158,11,0.2),_transparent_40%)]"></div>
+	<Image
+		src={AcuraKeyImage}
+		alt="Car key product"
+		class="relative mx-auto aspect-[4/3] w-full rounded-xl object-contain"
+	/>
+	<div class="absolute bottom-3 right-3 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-amber-700">
+		Key
+	</div>
+</div>

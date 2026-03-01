@@ -51,6 +51,7 @@ import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
 					}
 				</select>
 				<p id="sku-results-count" class="mt-2 text-sm text-gray-500">{priceCatalog.length} items available</p>
+				<p class="mt-1 text-sm text-gray-500">You can also pick a product card from the catalog below.</p>
 			</div>
 
 			<div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -294,6 +295,25 @@ import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
 		skuSelect.addEventListener("change", updatePreview);
 		conditionField.addEventListener("change", updatePreview);
 		quantityField.addEventListener("input", updatePreview);
+		document.addEventListener("key-catalog-select", (event) => {
+			const customEvent = event as CustomEvent<{ sku?: string }>;
+			const selectedSku = customEvent.detail?.sku;
+			if (!selectedSku) {
+				return;
+			}
+
+			const matchingOption = Array.from(skuSelect.options).find((option) => option.value === selectedSku);
+			if (!matchingOption) {
+				return;
+			}
+
+			makeField.value = matchingOption.dataset.make ?? "all";
+			searchField.value = "";
+			filterOptions();
+			skuSelect.value = selectedSku;
+			skuSelect.dispatchEvent(new Event("change"));
+			skuSelect.scrollIntoView({ block: "center", behavior: "smooth" });
+		});
 
 		form.addEventListener("submit", (event) => {
 			event.preventDefault();
