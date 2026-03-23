@@ -1,32 +1,38 @@
 ---
 import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
 import KeyProductImage from "./KeyProductImage.astro";
+
+const {
+	title = "Searchable and filterable SKU catalog",
+	description = "Choose your make, search by SKU, FCC ID, or description, and select the key that matches what you have.",
+	scrollClass = "max-h-[70rem]",
+} = Astro.props;
 ---
 
-<section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100 lg:p-8">
+<section id="price-catalog" class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100 lg:p-8">
 	<div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
 		<div class="max-w-3xl">
 			<p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Price list</p>
-			<h2 class="mt-2 text-3xl font-bold">Searchable and filterable SKU catalog</h2>
-			<p class="mt-3 text-gray-600">
-				Search by SKU, FCC ID, vehicle name, or any keyword. Filter by make or by whether a worn-price value is
-				available.
-			</p>
+			<h2 class="mt-2 text-3xl font-bold">{title}</h2>
+			<p class="mt-3 text-gray-600">{description}</p>
 		</div>
-		<p id="catalog-results-count" class="text-sm text-gray-500">{priceCatalog.length} catalog items</p>
+		<div class="rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-100">
+			<p class="text-xs font-semibold uppercase tracking-[0.16em] text-amber-800">Browse results</p>
+			<p id="catalog-results-count" class="mt-1 text-sm text-gray-700">{priceCatalog.length} catalog items</p>
+		</div>
 	</div>
 
-	<div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_240px_220px]">
-		<div>
-			<label for="catalog-search">Search catalog</label>
-			<input id="catalog-search" type="search" placeholder="Search SKU, description, FCC ID..." autocomplete="off" />
-		</div>
+	<div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)_220px]">
 		<div>
 			<label for="catalog-make">Make</label>
 			<select id="catalog-make">
-				<option value="all">All makes</option>
+				<option value="">Select a make</option>
 				{priceCatalogMakes.map((make) => <option value={make}>{make}</option>)}
 			</select>
+		</div>
+		<div>
+			<label for="catalog-search">Search catalog</label>
+			<input id="catalog-search" type="search" placeholder="Search SKU, description, FCC ID..." autocomplete="off" />
 		</div>
 		<div>
 			<label for="catalog-worn">Worn price</label>
@@ -38,46 +44,48 @@ import KeyProductImage from "./KeyProductImage.astro";
 		</div>
 	</div>
 
-	<div id="catalog-card-grid" class="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-		{
-			priceCatalog.map((item) => (
-				<article
-					class="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-					data-make={item.make}
-					data-has-worn={item.wornPrice === null ? "false" : "true"}
-					data-search={`${item.sku} ${item.make} ${item.description}`.toLowerCase()}
-				>
-					<KeyProductImage />
-					<div class="mt-4">
-						<div class="flex items-start justify-between gap-3">
-							<div>
-								<p class="text-xs font-semibold uppercase tracking-[0.15em] text-amber-700">{item.make}</p>
-								<h3 class="mt-1 text-lg font-bold text-gray-900">{item.sku}</h3>
+	<div class:list={["mt-6 overflow-y-auto rounded-3xl border border-gray-200 bg-gray-50 p-3 pr-2", scrollClass]}>
+		<div id="catalog-card-grid" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+			{
+				priceCatalog.map((item) => (
+					<article
+						class="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+						data-make={item.make}
+						data-has-worn={item.wornPrice === null ? "false" : "true"}
+						data-search={`${item.sku} ${item.make} ${item.description}`.toLowerCase()}
+					>
+						<KeyProductImage />
+						<div class="mt-4">
+							<div class="flex items-start justify-between gap-3">
+								<div>
+									<p class="text-xs font-semibold uppercase tracking-[0.15em] text-amber-700">{item.make}</p>
+									<h3 class="mt-1 text-lg font-bold text-gray-900">{item.sku}</h3>
+								</div>
+								<div class="rounded-full bg-gray-900 px-3 py-1 text-sm font-semibold text-white">
+									${item.price.toFixed(2)}
+								</div>
 							</div>
-							<div class="rounded-full bg-gray-900 px-3 py-1 text-sm font-semibold text-white">
-								${item.price.toFixed(2)}
+							<p class="mt-3 min-h-20 text-sm leading-6 text-gray-600">{item.description}</p>
+							<div class="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-gray-50 px-4 py-3">
+								<div>
+									<p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Worn price</p>
+									<p class="text-sm font-semibold text-gray-900">
+										{item.wornPrice === null ? "Not listed" : `$${item.wornPrice.toFixed(2)}`}
+									</p>
+								</div>
+								<button
+									type="button"
+									class="button button-black min-h-11 rounded-full !px-5 !py-2 text-sm"
+									data-select-sku={item.sku}
+								>
+									Select
+								</button>
 							</div>
 						</div>
-						<p class="mt-3 min-h-20 text-sm leading-6 text-gray-600">{item.description}</p>
-						<div class="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-gray-50 px-4 py-3">
-							<div>
-								<p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Worn price</p>
-								<p class="text-sm font-semibold text-gray-900">
-									{item.wornPrice === null ? "Not listed" : `$${item.wornPrice.toFixed(2)}`}
-								</p>
-							</div>
-							<button
-								type="button"
-								class="button button-black !px-3 !py-2 text-sm"
-								data-select-sku={item.sku}
-							>
-								Select
-							</button>
-						</div>
-					</div>
-				</article>
-			))
-		}
+					</article>
+				))
+			}
+		</div>
 	</div>
 </section>
 
@@ -110,14 +118,15 @@ import KeyProductImage from "./KeyProductImage.astro";
 			let visibleCount = 0;
 
 			cards.forEach((card) => {
+				const hasSelectedMake = makeValue.length > 0;
 				const matchesSearch = searchValue.length === 0 || (card.dataset.search ?? "").includes(searchValue);
-				const matchesMake = makeValue === "all" || card.dataset.make === makeValue;
+				const matchesMake = hasSelectedMake && card.dataset.make === makeValue;
 				const hasWorn = card.dataset.hasWorn === "true";
 				const matchesWorn =
 					wornValue === "all" ||
 					(wornValue === "has-worn" && hasWorn) ||
 					(wornValue === "no-worn" && !hasWorn);
-				const visible = matchesSearch && matchesMake && matchesWorn;
+				const visible = hasSelectedMake && matchesSearch && matchesMake && matchesWorn;
 
 				card.style.display = visible ? "" : "none";
 				if (visible) {
@@ -125,7 +134,9 @@ import KeyProductImage from "./KeyProductImage.astro";
 				}
 			});
 
-			resultsCount.textContent = `${visibleCount} matching catalog item${visibleCount === 1 ? "" : "s"}`;
+			resultsCount.textContent = makeValue
+				? `${visibleCount} matching catalog item${visibleCount === 1 ? "" : "s"}`
+				: "Choose a make to view matching keys";
 		};
 
 		cardGrid.querySelectorAll("[data-select-sku]").forEach((button) => {

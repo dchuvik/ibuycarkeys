@@ -1,39 +1,156 @@
 ---
-import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
+import { priceCatalog } from "~/data/priceCatalog";
+import PriceCatalog from "../PriceCatalog.astro";
 ---
 
-<section class="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+<section class="space-y-8">
+	<form
+		name="quote-cart"
+		method="POST"
+		data-netlify="true"
+		netlify-honeypot="bot-field"
+		class="hidden"
+		aria-hidden="true"
+	>
+		<input type="hidden" name="form-name" value="quote-cart" />
+		<input type="text" name="bot-field" />
+		<input type="text" name="recipient" value="dchuvik@gmail.com" />
+		<textarea name="quote_summary"></textarea>
+		<input type="text" name="total_keys" />
+		<input type="text" name="estimated_payout" />
+		<input type="text" name="submitted_at" />
+		<input type="text" name="source_page" />
+	</form>
+
 	<div class="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-gray-100 lg:p-8">
 		<div class="mb-6">
-			<p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Instant payout estimator</p>
-			<h2 class="mt-2 text-3xl font-bold text-balance">Search the SKU list and add keys to the quote cart</h2>
+			<p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Build your quote</p>
+			<h2 class="mt-2 text-3xl font-bold text-balance">Search for your key and see your payout</h2>
 			<p class="mt-3 text-base text-gray-600">
-				Filter by make, search by SKU or description, choose standard or worn pricing, and add the exact item to
-				the running payout quote.
+				Use the catalog below to find your key, then review the payout, choose the condition if available, and
+				add it to your quote cart.
 			</p>
 		</div>
 
 		<form id="key-quote-form" class="space-y-5">
-			<div>
-				<label for="vehicle-make">Vehicle make</label>
-				<select id="vehicle-make" name="vehicleMake">
-					<option value="all">All makes</option>
-					{priceCatalogMakes.map((make) => <option value={make}>{make}</option>)}
-				</select>
+			<div class="space-y-5">
+				<PriceCatalog scrollClass="max-h-[56rem]" />
+
+				<div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
+					<div id="current-line-payout" class="rounded-3xl bg-amber-50 p-5 ring-1 ring-amber-100 lg:p-6">
+						<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+							<div>
+								<p class="text-sm font-semibold uppercase tracking-[0.18em] text-amber-800">Current line payout</p>
+								<h3 class="mt-2 text-2xl font-bold text-gray-900">Review this key</h3>
+								<p id="quote-preview-detail" class="mt-2 text-sm text-gray-600">
+									Select a key from the catalog above to see your estimated payout.
+								</p>
+							</div>
+							<div class="rounded-2xl bg-white px-4 py-3 text-left shadow-sm ring-1 ring-amber-100 sm:min-w-44">
+								<p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Estimated line total</p>
+								<p id="quote-preview-total" class="mt-2 text-4xl font-bold text-gray-900">$0.00</p>
+							</div>
+						</div>
+
+						<div id="quote-preview-selection" class="mt-5 rounded-2xl border border-amber-200 bg-white/80 p-4">
+							<p class="text-xs font-semibold uppercase tracking-[0.15em] text-gray-500">Selected key</p>
+							<p id="quote-preview-sku" class="mt-2 text-lg font-bold text-gray-900">No key selected yet</p>
+							<p id="quote-preview-make" class="mt-1 text-sm font-semibold text-amber-800"></p>
+						</div>
+
+						<div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+							<div id="price-condition-group">
+								<label id="price-condition-label" for="price-condition">Condition</label>
+								<select id="price-condition" name="condition">
+									<option value="standard">Standard</option>
+									<option value="worn">Worn</option>
+								</select>
+								<p id="price-condition-help" class="mt-2 text-sm text-gray-500">
+									Choose the condition that best matches your key.
+								</p>
+							</div>
+
+							<div>
+								<label for="key-quantity">How many keys?</label>
+								<input id="key-quantity" name="quantity" type="number" min="1" step="1" value="1" required />
+							</div>
+						</div>
+
+						<div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+							<button
+								type="submit"
+								class="button button-black min-h-12 w-full rounded-full px-5 sm:w-auto"
+							>
+								Add To Quote Cart
+							</button>
+							<button
+								id="add-more-keys"
+								type="button"
+								class="button button-white min-h-12 w-full rounded-full border border-gray-200 px-5 sm:w-auto"
+							>
+								Add More Keys
+							</button>
+							<button
+								id="reset-key-form"
+								type="button"
+								class="button button-yellow min-h-12 w-full rounded-full px-5 sm:w-auto"
+							>
+								Clear This Key
+							</button>
+							<p class="text-sm text-gray-600">Select a key first, then choose the condition and quantity here.</p>
+						</div>
+					</div>
+
+					<div class="rounded-3xl bg-gray-900 p-6 text-white shadow-xl">
+						<div class="flex items-start justify-between gap-4">
+							<div>
+								<p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">Quote cart</p>
+								<h3 class="mt-2 text-2xl font-bold">Your saved keys</h3>
+							</div>
+							<div class="flex flex-col gap-2 sm:flex-row">
+								<button
+									id="send-quote-cart"
+									type="button"
+									class="button button-yellow min-h-11 rounded-full !px-4 !py-2 text-sm"
+								>
+									Send Quote
+								</button>
+								<button
+									id="clear-quote-cart"
+									type="button"
+									class="button button-white min-h-11 rounded-full !px-4 !py-2 text-sm"
+								>
+									Clear All
+								</button>
+							</div>
+						</div>
+						<p id="send-quote-status" class="mt-3 text-sm text-gray-300"></p>
+
+						<div class="mt-6 grid grid-cols-2 gap-4 rounded-2xl bg-white/5 p-4">
+							<div>
+								<p class="text-sm text-gray-300">Items</p>
+								<p id="quote-cart-count" class="text-3xl font-bold">0</p>
+							</div>
+							<div>
+								<p class="text-sm text-gray-300">Estimated payout</p>
+								<p id="quote-cart-total" class="text-3xl font-bold text-amber-300">$0.00</p>
+							</div>
+						</div>
+
+						<div class="mt-6 max-h-80 overflow-y-auto pr-2">
+							<ul id="quote-cart-items" class="space-y-3"></ul>
+							<p
+								id="quote-cart-empty"
+								class="rounded-2xl border border-dashed border-white/20 p-4 text-sm text-gray-300"
+							>
+								Your quote cart is empty. Search for a key and add it here to start building your quote.
+							</p>
+						</div>
+					</div>
+				</div>
 			</div>
 
-			<div>
-				<label for="key-search">Search SKU or description</label>
-				<input
-					id="key-search"
-					name="keySearch"
-					type="search"
-					placeholder="Search ACU.1, Toyota, smart key, FCC ID..."
-					autocomplete="off"
-				/>
-			</div>
-
-			<div>
+			<div class="hidden">
 				<label for="sku-select">Matching price list item</label>
 				<select id="sku-select" name="sku" required size="8" class="min-h-64">
 					{
@@ -50,64 +167,8 @@ import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
 						))
 					}
 				</select>
-				<p id="sku-results-count" class="mt-2 text-sm text-gray-500">{priceCatalog.length} items available</p>
-				<p class="mt-1 text-sm text-gray-500">You can also pick a product card from the catalog below.</p>
-			</div>
-
-			<div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-				<div>
-					<label for="price-condition">Condition</label>
-					<select id="price-condition" name="condition">
-						<option value="standard">Standard</option>
-						<option value="worn">Worn</option>
-					</select>
-				</div>
-
-				<div>
-					<label for="key-quantity">How many keys?</label>
-					<input id="key-quantity" name="quantity" type="number" min="1" step="1" value="1" required />
-				</div>
-			</div>
-
-			<div class="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-100">
-				<p class="text-sm font-semibold text-amber-800">Current line payout</p>
-				<p id="quote-preview-total" class="mt-2 text-4xl font-bold text-gray-900">$0.00</p>
-				<p id="quote-preview-detail" class="mt-2 text-sm text-gray-600">Choose a price list item to calculate.</p>
-			</div>
-
-			<div class="flex flex-col gap-3 sm:flex-row">
-				<button type="submit" class="button button-black w-full sm:w-auto">Add To Quote Cart</button>
-				<button id="reset-key-form" type="button" class="button button-yellow w-full sm:w-auto">
-					Clear Current Entry
-				</button>
 			</div>
 		</form>
-	</div>
-
-	<div class="rounded-3xl bg-gray-900 p-6 text-white shadow-xl lg:p-8">
-		<div class="flex items-start justify-between gap-4">
-			<div>
-				<p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">Quote cart</p>
-				<h3 class="mt-2 text-3xl font-bold">Saved keys and payout total</h3>
-			</div>
-			<button id="clear-quote-cart" type="button" class="button button-white !px-3 !py-2 text-sm">Clear All</button>
-		</div>
-
-		<div class="mt-6 grid grid-cols-2 gap-4 rounded-2xl bg-white/5 p-4">
-			<div>
-				<p class="text-sm text-gray-300">Items</p>
-				<p id="quote-cart-count" class="text-3xl font-bold">0</p>
-			</div>
-			<div>
-				<p class="text-sm text-gray-300">Estimated payout</p>
-				<p id="quote-cart-total" class="text-3xl font-bold text-amber-300">$0.00</p>
-			</div>
-		</div>
-
-		<ul id="quote-cart-items" class="mt-6 space-y-3"></ul>
-		<p id="quote-cart-empty" class="mt-6 rounded-2xl border border-dashed border-white/20 p-4 text-sm text-gray-300">
-			No keys in the cart yet. Search the catalog and add an item to start building the payout quote.
-		</p>
 	</div>
 </section>
 
@@ -120,38 +181,52 @@ import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
 		});
 
 		const form = document.getElementById("key-quote-form");
-		const makeField = document.getElementById("vehicle-make");
-		const searchField = document.getElementById("key-search");
 		const skuSelect = document.getElementById("sku-select");
 		const conditionField = document.getElementById("price-condition");
+		const conditionGroup = document.getElementById("price-condition-group");
+		const conditionLabel = document.getElementById("price-condition-label");
+		const conditionHelp = document.getElementById("price-condition-help");
 		const quantityField = document.getElementById("key-quantity");
-		const resultsCount = document.getElementById("sku-results-count");
+		const currentLinePayout = document.getElementById("current-line-payout");
 		const quotePreviewTotal = document.getElementById("quote-preview-total");
 		const quotePreviewDetail = document.getElementById("quote-preview-detail");
+		const quotePreviewSku = document.getElementById("quote-preview-sku");
+		const quotePreviewMake = document.getElementById("quote-preview-make");
 		const cartList = document.getElementById("quote-cart-items");
 		const cartEmpty = document.getElementById("quote-cart-empty");
 		const cartCount = document.getElementById("quote-cart-count");
 		const cartTotal = document.getElementById("quote-cart-total");
+		const addMoreKeysButton = document.getElementById("add-more-keys");
 		const resetButton = document.getElementById("reset-key-form");
+		const sendQuoteCartButton = document.getElementById("send-quote-cart");
+		const sendQuoteStatus = document.getElementById("send-quote-status");
 		const clearCartButton = document.getElementById("clear-quote-cart");
+		const priceCatalog = document.getElementById("price-catalog");
 
 		if (
 			!(
 				form instanceof HTMLFormElement &&
-				makeField instanceof HTMLSelectElement &&
-				searchField instanceof HTMLInputElement &&
 				skuSelect instanceof HTMLSelectElement &&
 				conditionField instanceof HTMLSelectElement &&
+				conditionGroup instanceof HTMLElement &&
+				conditionLabel instanceof HTMLElement &&
+				conditionHelp instanceof HTMLElement &&
 				quantityField instanceof HTMLInputElement &&
-				resultsCount instanceof HTMLElement &&
+				currentLinePayout instanceof HTMLElement &&
 				quotePreviewTotal instanceof HTMLElement &&
 				quotePreviewDetail instanceof HTMLElement &&
+				quotePreviewSku instanceof HTMLElement &&
+				quotePreviewMake instanceof HTMLElement &&
 				cartList instanceof HTMLElement &&
 				cartEmpty instanceof HTMLElement &&
 				cartCount instanceof HTMLElement &&
 				cartTotal instanceof HTMLElement &&
+				addMoreKeysButton instanceof HTMLButtonElement &&
 				resetButton instanceof HTMLButtonElement &&
-				clearCartButton instanceof HTMLButtonElement
+				sendQuoteCartButton instanceof HTMLButtonElement &&
+				sendQuoteStatus instanceof HTMLElement &&
+				clearCartButton instanceof HTMLButtonElement &&
+				priceCatalog instanceof HTMLElement
 			)
 		) {
 			return;
@@ -171,37 +246,53 @@ import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
 			localStorage.setItem(storageKey, JSON.stringify(items));
 		};
 
-		const getVisibleOptions = () => Array.from(skuSelect.options).filter((option) => option.style.display !== "none");
-
-		const filterOptions = () => {
-			const makeValue = makeField.value;
-			const searchValue = searchField.value.trim().toLowerCase();
-			let visibleCount = 0;
-
-			Array.from(skuSelect.options).forEach((option) => {
-				const matchesMake = makeValue === "all" || option.dataset.make === makeValue;
-				const haystack = `${option.value} ${option.dataset.description ?? ""}`.toLowerCase();
-				const matchesSearch = searchValue.length === 0 || haystack.includes(searchValue);
-				const visible = matchesMake && matchesSearch;
-
-				option.style.display = visible ? "" : "none";
-				if (visible) {
-					visibleCount += 1;
-				}
+		const buildQuoteSubmission = (items) => {
+			const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+			const totalPayout = items.reduce((sum, item) => sum + item.lineTotal, 0);
+			const createdAt = new Date().toLocaleString("en-US", {
+				dateStyle: "medium",
+				timeStyle: "short",
 			});
+			const lines = items.map(
+				(item, index) =>
+					`${index + 1}. ${item.sku} - ${item.description} | ${item.condition} | ${item.quantity} key${
+						item.quantity === 1 ? "" : "s"
+					} @ ${currencyFormatter.format(item.unitPrice)} | Line total: ${currencyFormatter.format(item.lineTotal)}`
+			);
 
-			const firstVisible = getVisibleOptions()[0];
-			if (firstVisible) {
-				firstVisible.selected = true;
+			return {
+				totalQuantity,
+				totalPayout,
+				createdAt,
+				summary: [
+					"Quote cart details:",
+					"",
+					...lines,
+					"",
+					`Total keys: ${totalQuantity}`,
+					`Estimated payout: ${currencyFormatter.format(totalPayout)}`,
+					`Created: ${createdAt}`,
+				].join("\n"),
+			};
+		};
+
+		const setConditionAvailability = (enabled) => {
+			conditionField.disabled = !enabled;
+
+			conditionGroup.classList.toggle("opacity-55", !enabled);
+			conditionLabel.classList.toggle("text-gray-400", !enabled);
+			conditionHelp.textContent = enabled
+				? "Choose the condition that best matches your key."
+				: "Only one payout option is available for this key.";
+
+			if (!enabled) {
+				conditionField.value = "standard";
 			}
-
-			resultsCount.textContent = `${visibleCount} matching item${visibleCount === 1 ? "" : "s"}`;
-			updatePreview();
 		};
 
 		const getSelectedOption = () => {
 			const selected = skuSelect.selectedOptions[0];
-			if (!selected || selected.style.display === "none") {
+			if (!selected) {
 				return null;
 			}
 			return selected;
@@ -236,15 +327,24 @@ import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
 
 		const updatePreview = () => {
 			const current = getCurrentQuote();
+			const selected = getSelectedOption();
+			const hasConditionOptions = Boolean(selected?.dataset.wornPrice);
+
+			setConditionAvailability(hasConditionOptions);
 
 			if (!current || current.quantity < 1) {
 				quotePreviewTotal.textContent = currencyFormatter.format(0);
-				quotePreviewDetail.textContent = "Choose a price list item to calculate.";
+				quotePreviewDetail.textContent = "Select a key from the catalog above to see your estimated payout.";
+				quotePreviewSku.textContent = "No key selected yet";
+				quotePreviewMake.textContent = "";
+				conditionHelp.textContent = "Choose the condition that best matches your key.";
 				return;
 			}
 
 			quotePreviewTotal.textContent = currencyFormatter.format(current.lineTotal);
-			quotePreviewDetail.textContent = `${current.sku} | ${current.quantity} x ${current.condition} price at ${currencyFormatter.format(
+			quotePreviewSku.textContent = current.sku;
+			quotePreviewMake.textContent = `${current.make} key`;
+			quotePreviewDetail.textContent = `${current.quantity} x ${current.condition} price at ${currencyFormatter.format(
 				current.unitPrice
 			)} each`;
 		};
@@ -290,8 +390,6 @@ import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
 			});
 		};
 
-		makeField.addEventListener("change", filterOptions);
-		searchField.addEventListener("input", filterOptions);
 		skuSelect.addEventListener("change", updatePreview);
 		conditionField.addEventListener("change", updatePreview);
 		quantityField.addEventListener("input", updatePreview);
@@ -307,12 +405,9 @@ import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
 				return;
 			}
 
-			makeField.value = matchingOption.dataset.make ?? "all";
-			searchField.value = "";
-			filterOptions();
 			skuSelect.value = selectedSku;
 			skuSelect.dispatchEvent(new Event("change"));
-			skuSelect.scrollIntoView({ block: "center", behavior: "smooth" });
+			currentLinePayout.scrollIntoView({ block: "start", behavior: "smooth" });
 		});
 
 		form.addEventListener("submit", (event) => {
@@ -340,19 +435,63 @@ import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
 		});
 
 		resetButton.addEventListener("click", () => {
-			makeField.value = "all";
-			searchField.value = "";
 			conditionField.value = "standard";
 			quantityField.value = "1";
-			filterOptions();
+			updatePreview();
+		});
+
+		addMoreKeysButton.addEventListener("click", () => {
+			priceCatalog.scrollIntoView({ block: "start", behavior: "smooth" });
 		});
 
 		clearCartButton.addEventListener("click", () => {
 			writeCart([]);
 			renderCart();
+			sendQuoteStatus.textContent = "";
 		});
 
-		filterOptions();
+		sendQuoteCartButton.addEventListener("click", async () => {
+			const items = readCart();
+			if (!items.length) {
+				sendQuoteStatus.textContent = "Add at least one key to your quote before sending.";
+				return;
+			}
+
+			const submission = buildQuoteSubmission(items);
+			const payload = new URLSearchParams({
+				"form-name": "quote-cart",
+				recipient: "dchuvik@gmail.com",
+				quote_summary: submission.summary,
+				total_keys: String(submission.totalQuantity),
+				estimated_payout: currencyFormatter.format(submission.totalPayout),
+				submitted_at: submission.createdAt,
+				source_page: window.location.href,
+			});
+
+			sendQuoteCartButton.disabled = true;
+			sendQuoteStatus.textContent = "Sending your quote...";
+
+			try {
+				const response = await fetch("/", {
+					method: "POST",
+					headers: { "Content-Type": "application/x-www-form-urlencoded" },
+					body: payload.toString(),
+				});
+
+				if (!response.ok) {
+					throw new Error("Submission failed");
+				}
+
+				sendQuoteStatus.textContent = "Your quote was sent successfully.";
+			} catch {
+				sendQuoteStatus.textContent = "Your quote could not be sent right now. Please try again.";
+			} finally {
+				sendQuoteCartButton.disabled = false;
+			}
+		});
+
+		skuSelect.selectedIndex = -1;
+		updatePreview();
 		renderCart();
 	});
 </script>

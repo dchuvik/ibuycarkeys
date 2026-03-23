@@ -1,7 +1,7 @@
 ---
 import { menuMain } from "~/data/menus";
 import IconLogo from "~/assets/images/icons/logo.svg";
-import { siteName } from "~/data/config";
+import { siteName, siteSlogan } from "~/data/config";
 const rmTrailingSlash = (path: string): string => {
 	return path.endsWith("/") && path.length > 1 ? path.slice(0, path.length - 1) : path;
 };
@@ -11,12 +11,19 @@ const pathname = rmTrailingSlash(Astro.url.pathname);
 
 <header>
 	<section class="bg-yellow-200">
-		<div class="container py-4 lg:py-8">
+		<div class="container py-4 lg:py-6">
 			<div class="flex justify-between items-center gap-x-4">
-				<a href="/">
-					<div class="flex items-center gap-x-2">
-						<IconLogo class="h-5 lg:h-8 inline-block" />
-						<span class="font-bold text-2xl lg:text-4xl">{siteName}</span>
+				<a href="/" class="shrink-0">
+					<div class="flex items-center gap-x-3 lg:gap-x-4">
+						<div class="flex size-15 items-center justify-center rounded-3xl bg-white/85 shadow-sm ring-1 ring-black/10 lg:size-20">
+							<IconLogo class="size-11 lg:size-14" />
+						</div>
+						<div class="leading-none">
+							<span class="block font-bold text-xl tracking-[-0.02em] text-gray-900 lg:text-3xl">{siteName}</span>
+							<span class="mt-1 hidden text-xs font-semibold uppercase tracking-[0.18em] text-gray-700 lg:block">
+								{siteSlogan}
+							</span>
+						</div>
 					</div>
 				</a>
 
