@@ -11,20 +11,20 @@ export const defaultPaginationSize = 12;
 export const priceSteps = [50000, 100000, 150000, 200000, 250000, 300000];
 
 export const phone = {
-	href: "tel:+18005553957",
-	label: "(800) 555-3957",
+	href: "tel:+16808005728",
+	label: "(680)-800-5728",
 };
 
 export const email = {
-	href: "mailto:quotes@ibuycarkeys.com",
-	label: "quotes@ibuycarkeys.com",
+	href: "mailto:carkeysupplyny@gmail.com",
+	label: "carkeysupplyny@gmail.com",
 };
 
 export const address = {
-	street: "420 Market Street",
-	city: "Charlotte",
-	zip: "28202",
-	state: "NC",
+	street: "NY-5",
+	city: "Elbridge",
+	zip: "13060",
+	state: "NY",
 	country: "USA",
 };
 

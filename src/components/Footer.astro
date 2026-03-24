@@ -3,7 +3,6 @@ import { siteName, siteSlogan } from "~/data/config";
 import { menuNavigation, menuMisc, menuService, menuLegal } from "~/data/menus";
 import NewsletterFooter from "./forms/NewsletterFooter.astro";
 import IconLogo from "~/assets/images/icons/logo.svg";
-import SocialMediaIcons from "./SocialMediaIcons.astro";
 const year = new Date().getFullYear();
 ---
 
@@ -119,11 +118,8 @@ const year = new Date().getFullYear();
 			</div>
 			<NewsletterFooter />
 		</div>
-		<div class="mt-8 border-t border-gray-800/10 pt-8 md:flex md:items-center md:justify-between">
-			<div class="flex gap-x-6 md:order-2">
-				<SocialMediaIcons />
-			</div>
-			<p class="mt-8 text-sm/6 text-gray-600 md:order-1 md:mt-0">
+		<div class="mt-8 border-t border-gray-800/10 pt-8">
+			<p class="text-sm/6 text-gray-600">
 				&copy; {year}
 				{siteName}. All rights reserved.
 			</p>

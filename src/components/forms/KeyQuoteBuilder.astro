@@ -5,22 +5,148 @@ import PriceCatalog from "../PriceCatalog.astro";
 
 <section class="space-y-8">
 	<form
+		id="quote-request-form"
 		name="quote-cart"
 		method="POST"
 		data-netlify="true"
 		netlify-honeypot="bot-field"
-		class="hidden"
-		aria-hidden="true"
+		class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-950/70 p-4"
 	>
-		<input type="hidden" name="form-name" value="quote-cart" />
-		<input type="text" name="bot-field" />
-		<input type="text" name="recipient" value="dchuvik@gmail.com" />
-		<textarea name="quote_summary"></textarea>
-		<input type="text" name="total_keys" />
-		<input type="text" name="estimated_payout" />
-		<input type="text" name="submitted_at" />
-		<input type="text" name="source_page" />
+		<div class="absolute inset-0" data-close-quote-request></div>
+		<div class="relative z-10 w-full max-w-2xl max-h-[84vh] overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl ring-1 ring-gray-200">
+			<div class="flex items-start justify-between gap-4">
+				<div>
+					<p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Submit your quote</p>
+					<h3 class="mt-2 text-xl font-bold text-gray-900">Submit your quote details</h3>
+					<p class="mt-2 text-sm leading-6 text-gray-600">
+						Add your contact and mailing details so we can review your shipment and process your payout.
+					</p>
+				</div>
+				<button
+					type="button"
+					data-close-quote-request
+					class="inline-flex size-11 items-center justify-center rounded-full border border-gray-200 text-xl leading-none text-gray-500 transition hover:border-gray-300 hover:text-gray-700"
+					aria-label="Close quote form"
+				>
+					×
+				</button>
+			</div>
+
+			<input type="hidden" name="form-name" value="quote-cart" />
+			<input type="hidden" name="bot-field" />
+			<input type="hidden" name="recipient" value="dchuvik@gmail.com" />
+			<input type="hidden" name="total_keys" id="quote-request-total-keys" />
+			<input type="hidden" name="estimated_payout" id="quote-request-estimated-payout" />
+			<input type="hidden" name="submitted_at" id="quote-request-submitted-at" />
+			<input type="hidden" name="source_page" id="quote-request-source-page" />
+
+			<div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<div>
+					<label for="quote-request-name">Your name</label>
+					<input id="quote-request-name" name="customer_name" type="text" autocomplete="name" required />
+				</div>
+				<div>
+					<label for="quote-request-email">Email address</label>
+					<input
+						id="quote-request-email"
+						name="customer_email"
+						type="email"
+						autocomplete="email"
+						required
+					/>
+				</div>
+				<div class="sm:col-span-2">
+					<label for="quote-request-phone">Phone number</label>
+					<input
+						id="quote-request-phone"
+						name="customer_phone"
+						type="tel"
+						autocomplete="tel"
+						inputmode="tel"
+						placeholder="(555) 555-5555"
+						required
+					/>
+				</div>
+				<div class="sm:col-span-2">
+					<label for="quote-request-address">Mailing address for payment</label>
+					<input
+						id="quote-request-address"
+						name="customer_address"
+						type="text"
+						autocomplete="street-address"
+						placeholder="Street address"
+						required
+					/>
+				</div>
+				<div>
+					<label for="quote-request-city">City</label>
+					<input id="quote-request-city" name="customer_city" type="text" autocomplete="address-level2" required />
+				</div>
+				<div>
+					<label for="quote-request-state">State</label>
+					<input
+						id="quote-request-state"
+						name="customer_state"
+						type="text"
+						autocomplete="address-level1"
+						maxlength="2"
+						placeholder="NY"
+						required
+					/>
+				</div>
+				<div>
+					<label for="quote-request-zip">ZIP code</label>
+					<input
+						id="quote-request-zip"
+						name="customer_zip"
+						type="text"
+						autocomplete="postal-code"
+						inputmode="numeric"
+						placeholder="12345"
+						required
+					/>
+				</div>
+				<div class="sm:col-span-2">
+					<label for="quote-request-summary">Quote details</label>
+					<textarea
+						id="quote-request-summary"
+						name="quote_summary"
+						rows="5"
+						readonly
+						class="min-h-36 resize-none"
+					></textarea>
+				</div>
+			</div>
+
+			<div class="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-5 text-amber-950 ring-1 ring-amber-200">
+				You confirm you own these keys. If the total changes after inspection, we will contact you before payment.
+			</div>
+
+			<p id="quote-request-status" class="mt-4 text-sm text-gray-600"></p>
+
+			<div class="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
+				<button
+					type="button"
+					data-close-quote-request
+					class="button button-white min-h-12 rounded-full border border-gray-200 px-5"
+				>
+					Cancel
+				</button>
+				<button type="submit" class="button button-black min-h-12 rounded-full px-5">
+					Submit Quote
+				</button>
+			</div>
+		</div>
 	</form>
+
+	<div
+		id="quote-submission-toast"
+		class="pointer-events-none fixed inset-x-4 bottom-4 z-50 hidden justify-center sm:inset-x-auto sm:right-6 sm:justify-end"
+	>
+		<div class="max-w-md rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-semibold text-white shadow-2xl ring-1 ring-emerald-500/40">
+			Your quote was submitted successfully.
+		</div>
+	</div>
 
 	<div class="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-gray-100 lg:p-8">
 		<div class="mb-6">
@@ -99,6 +225,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 							</button>
 							<p class="text-sm text-gray-600">Select a key first, then choose the condition and quantity here.</p>
 						</div>
+						<p id="quote-cart-feedback" class="mt-3 text-sm font-medium text-emerald-700"></p>
 					</div>
 
 					<div class="rounded-3xl bg-gray-900 p-6 text-white shadow-xl">
@@ -202,6 +329,25 @@ import PriceCatalog from "../PriceCatalog.astro";
 		const sendQuoteStatus = document.getElementById("send-quote-status");
 		const clearCartButton = document.getElementById("clear-quote-cart");
 		const priceCatalog = document.getElementById("price-catalog");
+		const quoteRequestForm = document.getElementById("quote-request-form");
+		const quoteRequestName = document.getElementById("quote-request-name");
+		const quoteRequestEmail = document.getElementById("quote-request-email");
+		const quoteRequestPhone = document.getElementById("quote-request-phone");
+		const quoteRequestAddress = document.getElementById("quote-request-address");
+		const quoteRequestCity = document.getElementById("quote-request-city");
+		const quoteRequestState = document.getElementById("quote-request-state");
+		const quoteRequestZip = document.getElementById("quote-request-zip");
+		const quoteRequestSummary = document.getElementById("quote-request-summary");
+		const quoteRequestTotalKeys = document.getElementById("quote-request-total-keys");
+		const quoteRequestEstimatedPayout = document.getElementById("quote-request-estimated-payout");
+		const quoteRequestSubmittedAt = document.getElementById("quote-request-submitted-at");
+		const quoteRequestSourcePage = document.getElementById("quote-request-source-page");
+		const quoteRequestStatus = document.getElementById("quote-request-status");
+		const closeQuoteRequestButtons = Array.from(document.querySelectorAll("[data-close-quote-request]"));
+		const quoteCartFeedback = document.getElementById("quote-cart-feedback");
+		const quoteSubmissionToast = document.getElementById("quote-submission-toast");
+		let quoteCartFeedbackTimer = 0;
+		let quoteSubmissionToastTimer = 0;
 
 		if (
 			!(
@@ -226,11 +372,80 @@ import PriceCatalog from "../PriceCatalog.astro";
 				sendQuoteCartButton instanceof HTMLButtonElement &&
 				sendQuoteStatus instanceof HTMLElement &&
 				clearCartButton instanceof HTMLButtonElement &&
-				priceCatalog instanceof HTMLElement
+				priceCatalog instanceof HTMLElement &&
+				quoteRequestForm instanceof HTMLFormElement &&
+				quoteRequestName instanceof HTMLInputElement &&
+				quoteRequestEmail instanceof HTMLInputElement &&
+				quoteRequestPhone instanceof HTMLInputElement &&
+				quoteRequestAddress instanceof HTMLInputElement &&
+				quoteRequestCity instanceof HTMLInputElement &&
+				quoteRequestState instanceof HTMLInputElement &&
+				quoteRequestZip instanceof HTMLInputElement &&
+				quoteRequestSummary instanceof HTMLTextAreaElement &&
+				quoteRequestTotalKeys instanceof HTMLInputElement &&
+				quoteRequestEstimatedPayout instanceof HTMLInputElement &&
+				quoteRequestSubmittedAt instanceof HTMLInputElement &&
+				quoteRequestSourcePage instanceof HTMLInputElement &&
+				quoteRequestStatus instanceof HTMLElement &&
+				quoteCartFeedback instanceof HTMLElement &&
+				quoteSubmissionToast instanceof HTMLElement
 			)
 		) {
 			return;
 		}
+
+		const openQuoteRequest = () => {
+			quoteRequestForm.classList.remove("hidden");
+			quoteRequestForm.classList.add("flex");
+			document.body.classList.add("overflow-hidden");
+		};
+
+		const closeQuoteRequest = () => {
+			quoteRequestForm.classList.add("hidden");
+			quoteRequestForm.classList.remove("flex");
+			quoteRequestStatus.textContent = "";
+			document.body.classList.remove("overflow-hidden");
+		};
+
+		const showQuoteCartFeedback = (message) => {
+			quoteCartFeedback.textContent = message;
+
+			if (quoteCartFeedbackTimer) {
+				window.clearTimeout(quoteCartFeedbackTimer);
+			}
+
+			quoteCartFeedbackTimer = window.setTimeout(() => {
+				quoteCartFeedback.textContent = "";
+			}, 3200);
+		};
+
+		const showQuoteSubmissionToast = () => {
+			quoteSubmissionToast.classList.remove("hidden");
+			quoteSubmissionToast.classList.add("flex");
+
+			if (quoteSubmissionToastTimer) {
+				window.clearTimeout(quoteSubmissionToastTimer);
+			}
+
+			quoteSubmissionToastTimer = window.setTimeout(() => {
+				quoteSubmissionToast.classList.add("hidden");
+				quoteSubmissionToast.classList.remove("flex");
+			}, 4200);
+		};
+
+		const formatPhoneNumber = (value) => {
+			const digits = value.replace(/\D/g, "").slice(0, 10);
+
+			if (digits.length <= 3) {
+				return digits;
+			}
+
+			if (digits.length <= 6) {
+				return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+			}
+
+			return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+		};
 
 		const readCart = () => {
 			try {
@@ -432,6 +647,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 			renderCart();
 			quantityField.value = "1";
 			updatePreview();
+			showQuoteCartFeedback(`${current.sku} was added to your quote cart.`);
 		});
 
 		resetButton.addEventListener("click", () => {
@@ -450,7 +666,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 			sendQuoteStatus.textContent = "";
 		});
 
-		sendQuoteCartButton.addEventListener("click", async () => {
+		sendQuoteCartButton.addEventListener("click", () => {
 			const items = readCart();
 			if (!items.length) {
 				sendQuoteStatus.textContent = "Add at least one key to your quote before sending.";
@@ -458,18 +674,56 @@ import PriceCatalog from "../PriceCatalog.astro";
 			}
 
 			const submission = buildQuoteSubmission(items);
-			const payload = new URLSearchParams({
-				"form-name": "quote-cart",
-				recipient: "dchuvik@gmail.com",
-				quote_summary: submission.summary,
-				total_keys: String(submission.totalQuantity),
-				estimated_payout: currencyFormatter.format(submission.totalPayout),
-				submitted_at: submission.createdAt,
-				source_page: window.location.href,
+			quoteRequestSummary.value = submission.summary;
+			quoteRequestTotalKeys.value = String(submission.totalQuantity);
+			quoteRequestEstimatedPayout.value = currencyFormatter.format(submission.totalPayout);
+			quoteRequestSubmittedAt.value = submission.createdAt;
+			quoteRequestSourcePage.value = window.location.href;
+			quoteRequestStatus.textContent = "";
+			sendQuoteStatus.textContent = "";
+			openQuoteRequest();
+			window.setTimeout(() => {
+				quoteRequestName.focus();
+			}, 50);
+		});
+
+		closeQuoteRequestButtons.forEach((button) => {
+			button.addEventListener("click", closeQuoteRequest);
+		});
+
+		quoteRequestPhone.addEventListener("input", () => {
+			quoteRequestPhone.value = formatPhoneNumber(quoteRequestPhone.value);
+		});
+
+		quoteRequestState.addEventListener("input", () => {
+			quoteRequestState.value = quoteRequestState.value.replace(/[^a-z]/gi, "").toUpperCase().slice(0, 2);
+		});
+
+		quoteRequestZip.addEventListener("input", () => {
+			quoteRequestZip.value = quoteRequestZip.value.replace(/\D/g, "").slice(0, 5);
+		});
+
+		quoteRequestForm.addEventListener("submit", async (event) => {
+			event.preventDefault();
+
+			if (!quoteRequestForm.reportValidity()) {
+				return;
+			}
+
+			const formData = new FormData(quoteRequestForm);
+			const payload = new URLSearchParams();
+
+			formData.forEach((value, key) => {
+				payload.append(key, String(value));
 			});
 
-			sendQuoteCartButton.disabled = true;
-			sendQuoteStatus.textContent = "Sending your quote...";
+			const submitButton = quoteRequestForm.querySelector('button[type="submit"]');
+			if (!(submitButton instanceof HTMLButtonElement)) {
+				return;
+			}
+
+			submitButton.disabled = true;
+			quoteRequestStatus.textContent = "Sending your quote...";
 
 			try {
 				const response = await fetch("/", {
@@ -482,11 +736,21 @@ import PriceCatalog from "../PriceCatalog.astro";
 					throw new Error("Submission failed");
 				}
 
-				sendQuoteStatus.textContent = "Your quote was sent successfully.";
+				sendQuoteStatus.textContent = "Your quote was sent successfully. We will reach out soon.";
+				quoteRequestStatus.textContent = "Your quote was sent successfully.";
+				showQuoteSubmissionToast();
+				quoteRequestForm.reset();
+				window.setTimeout(closeQuoteRequest, 900);
 			} catch {
-				sendQuoteStatus.textContent = "Your quote could not be sent right now. Please try again.";
+				quoteRequestStatus.textContent = "Your quote could not be sent right now. Please try again.";
 			} finally {
-				sendQuoteCartButton.disabled = false;
+				submitButton.disabled = false;
+			}
+		});
+
+		document.addEventListener("keydown", (event) => {
+			if (event.key === "Escape" && quoteRequestForm.classList.contains("flex")) {
+				closeQuoteRequest();
 			}
 		});
 

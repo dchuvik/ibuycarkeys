@@ -119,14 +119,15 @@ const {
 
 			cards.forEach((card) => {
 				const hasSelectedMake = makeValue.length > 0;
-				const matchesSearch = searchValue.length === 0 || (card.dataset.search ?? "").includes(searchValue);
-				const matchesMake = hasSelectedMake && card.dataset.make === makeValue;
+				const hasSearch = searchValue.length > 0;
+				const matchesSearch = !hasSearch || (card.dataset.search ?? "").includes(searchValue);
+				const matchesMake = !hasSelectedMake || card.dataset.make === makeValue;
 				const hasWorn = card.dataset.hasWorn === "true";
 				const matchesWorn =
 					wornValue === "all" ||
 					(wornValue === "has-worn" && hasWorn) ||
 					(wornValue === "no-worn" && !hasWorn);
-				const visible = hasSelectedMake && matchesSearch && matchesMake && matchesWorn;
+				const visible = (hasSelectedMake || hasSearch) && matchesSearch && matchesMake && matchesWorn;
 
 				card.style.display = visible ? "" : "none";
 				if (visible) {
@@ -134,9 +135,14 @@ const {
 				}
 			});
 
-			resultsCount.textContent = makeValue
-				? `${visibleCount} matching catalog item${visibleCount === 1 ? "" : "s"}`
-				: "Choose a make to view matching keys";
+			if (hasSelectedMake) {
+				resultsCount.textContent = `${visibleCount} matching catalog item${visibleCount === 1 ? "" : "s"}`;
+				return;
+			}
+
+			resultsCount.textContent = searchValue
+				? `${visibleCount} matching catalog item${visibleCount === 1 ? "" : "s"} across all makes`
+				: "Choose a make or start typing to search all keys";
 		};
 
 		cardGrid.querySelectorAll("[data-select-sku]").forEach((button) => {

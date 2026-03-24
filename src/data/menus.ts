@@ -65,14 +65,6 @@ export const menuMisc: MenuNavigation = {
 			name: "About Us",
 			url: "/about-us",
 		},
-		{
-			name: "Testimonials",
-			url: "/about-us/testimonials",
-		},
-		{
-			name: "Blog",
-			url: "/blog",
-		},
 	],
 };
 

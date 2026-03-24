@@ -1,40 +1,58 @@
 ---
+const wasSubmitted = Astro.url.searchParams.get("submitted") === "true";
 ---
 
-<form action="#" method="POST">
-    <div class="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
-        <div>
-            <label for="first-name" class="block text-sm font-semibold">First name</label>
-            <div>
-                <input type="text" name="first-name" id="first-name" autocomplete="given-name" />
-            </div>
-        </div>
-        <div>
-            <label for="last-name" class="block text-sm font-semibold">Last name</label>
-            <div>
-                <input type="text" name="last-name" id="last-name" autocomplete="family-name" />
-            </div>
-        </div>
-        <div class="sm:col-span-2">
-            <label for="email" class="block text-sm font-semibold">Email</label>
-            <div>
-                <input type="email" name="email" id="email" autocomplete="email" />
-            </div>
-        </div>
-        <div class="sm:col-span-2">
-            <label for="phone-number" class="block text-sm font-semibold">Phone number</label>
-            <div>
-                <input type="tel" name="phone-number" id="phone-number" autocomplete="tel" />
-            </div>
-        </div>
-        <div class="sm:col-span-2">
-            <label for="message" class="block text-sm font-semibold">Message</label>
-            <div>
-                <textarea name="message" id="message" rows="4"></textarea>
-            </div>
-        </div>
-    </div>
-    <div class="mt-8 flex justify-end">
-        <button type="submit" class="button button-yellow">Send message</button>
-    </div>
+{
+	wasSubmitted && (
+		<div class="mb-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">
+			Your message was sent successfully. We will get back to you soon.
+		</div>
+	)
+}
+
+<form
+	name="contact"
+	method="POST"
+	action="/contact/?submitted=true"
+	data-netlify="true"
+	netlify-honeypot="bot-field"
+>
+	<input type="hidden" name="form-name" value="contact" />
+	<input type="hidden" name="bot-field" />
+
+	<div class="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
+		<div>
+			<label for="first-name">First name</label>
+			<div>
+				<input type="text" name="first-name" id="first-name" autocomplete="given-name" required />
+			</div>
+		</div>
+		<div>
+			<label for="last-name">Last name</label>
+			<div>
+				<input type="text" name="last-name" id="last-name" autocomplete="family-name" required />
+			</div>
+		</div>
+		<div class="sm:col-span-2">
+			<label for="email">Email</label>
+			<div>
+				<input type="email" name="email" id="email" autocomplete="email" required />
+			</div>
+		</div>
+		<div class="sm:col-span-2">
+			<label for="phone-number">Phone number</label>
+			<div>
+				<input type="tel" name="phone-number" id="phone-number" autocomplete="tel" />
+			</div>
+		</div>
+		<div class="sm:col-span-2">
+			<label for="message">Message</label>
+			<div>
+				<textarea name="message" id="message" rows="4" required></textarea>
+			</div>
+		</div>
+	</div>
+	<div class="mt-8 flex justify-end">
+		<button type="submit" class="button button-yellow">Send message</button>
+	</div>
 </form>
