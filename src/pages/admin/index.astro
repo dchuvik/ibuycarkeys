@@ -51,6 +51,15 @@ const formatDateTime = (value: string) =>
 		timeStyle: "short",
 	}).format(new Date(value));
 
+const formatCompactDate = (value: string) =>
+	new Intl.DateTimeFormat("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	}).format(new Date(value));
+
+const quoteStates = new Set<string>();
+
 if (isAuthenticated && isConfigured) {
 	try {
 		const supabaseAdmin = getSupabaseAdmin();
@@ -77,10 +86,18 @@ if (isAuthenticated && isConfigured) {
 
 		contacts = (contactData ?? []) as ContactMessage[];
 		quotes = (quoteData ?? []) as QuoteRequest[];
+
+		for (const quote of quotes) {
+			if (quote.customer_state) {
+				quoteStates.add(quote.customer_state.toUpperCase());
+			}
+		}
 	} catch (error) {
 		loadError = error instanceof Error ? error.message : "Could not load submission data.";
 	}
 }
+
+const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.localeCompare(right));
 ---
 
 <Layout
@@ -91,12 +108,12 @@ if (isAuthenticated && isConfigured) {
 >
 	<Section class:list={"bg-gradient-to-br from-stone-100 via-white to-amber-50"}>
 		<Container>
-			<div class="mx-auto max-w-6xl space-y-8">
+			<div class="mx-auto max-w-7xl space-y-8">
 				<div class="flex flex-col gap-4 rounded-[2rem] bg-gray-950 px-6 py-8 text-white shadow-2xl sm:px-8">
 					<p class="text-sm font-semibold uppercase tracking-[0.22em] text-amber-300">Internal dashboard</p>
 					<h1 class="text-4xl font-bold tracking-[-0.03em]">Submission admin</h1>
 					<p class="max-w-3xl text-sm leading-6 text-gray-300">
-						View recent quote requests and contact messages collected through the website.
+						Review quote orders and contact submissions collected through the website.
 					</p>
 				</div>
 
@@ -134,7 +151,7 @@ if (isAuthenticated && isConfigured) {
 									<div class="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
 										The admin dashboard is not configured yet.
 									</div>
-								) 
+								)
 							}
 
 							<form method="POST" action="/api/admin-login" class="mt-6 space-y-4">
@@ -177,108 +194,213 @@ if (isAuthenticated && isConfigured) {
 								)
 							}
 
-							<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-								<div class="rounded-[2rem] bg-white p-6 shadow-xl ring-1 ring-gray-200">
-									<div class="flex items-end justify-between gap-4">
-										<div>
-											<p class="text-sm font-semibold uppercase tracking-[0.16em] text-amber-700">Contact form</p>
-											<h2 class="mt-2 text-2xl font-bold text-gray-950">Contact messages</h2>
-										</div>
-										<p class="text-4xl font-bold tracking-[-0.03em] text-gray-950">{contacts.length}</p>
-									</div>
+							<div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
+									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Quote orders</p>
+									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">{quotes.length}</p>
+								</div>
+								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
+									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Contact messages</p>
+									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">{contacts.length}</p>
+								</div>
+								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
+									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">States covered</p>
+									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">{sortedQuoteStates.length}</p>
+								</div>
+								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
+									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Orders with payout</p>
+									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">
+										{quotes.filter((quote) => Boolean(quote.estimated_payout)).length}
+									</p>
+								</div>
+							</div>
 
-									<div class="mt-6 space-y-4">
-										{
-											contacts.length ? (
-												contacts.map((contact) => (
-													<article class="rounded-3xl border border-gray-200 bg-stone-50 p-5">
-														<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-															<div>
-																<h3 class="text-lg font-bold text-gray-950">
-																	{contact.first_name} {contact.last_name}
-																</h3>
-																<p class="mt-1 text-sm font-medium text-amber-800">{contact.email}</p>
-																{
-																	contact.phone_number && (
-																		<p class="mt-1 text-sm text-gray-600">{contact.phone_number}</p>
-																	)
-																}
-															</div>
-															<p class="text-sm text-gray-500">{formatDateTime(contact.created_at)}</p>
-														</div>
-														<p class="mt-4 whitespace-pre-wrap text-sm leading-6 text-gray-700">{contact.message}</p>
-														{
-															contact.source_page && (
-																<p class="mt-4 break-all text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
-																	Source: {contact.source_page}
-																</p>
-															)
-														}
-													</article>
+							<div class="space-y-6 rounded-[2rem] bg-white p-6 shadow-xl ring-1 ring-gray-200">
+								<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+									<div>
+										<p class="text-sm font-semibold uppercase tracking-[0.16em] text-amber-700">Quote form</p>
+										<h2 class="mt-2 text-3xl font-bold text-gray-950">Quote orders</h2>
+										<p class="mt-2 text-sm text-gray-600">
+											Search by customer, email, phone, address, payout, or quote details. Filter by state or payout availability.
+										</p>
+									</div>
+									<p class="text-sm font-medium text-gray-500">
+										Visible rows: <span id="quote-results-count" class="font-bold text-gray-950">{quotes.length}</span>
+									</p>
+								</div>
+
+								<div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_220px_220px]">
+									<div>
+										<label for="quote-search">Search orders</label>
+										<input
+											id="quote-search"
+											type="search"
+											placeholder="Search name, email, phone, address, payout, or summary"
+										/>
+									</div>
+									<div>
+										<label for="quote-state-filter">State</label>
+										<select id="quote-state-filter">
+											<option value="all">All states</option>
+											{
+												sortedQuoteStates.map((state) => (
+													<option value={state}>{state}</option>
 												))
-											) : (
-												<p class="rounded-3xl border border-dashed border-gray-300 px-5 py-8 text-sm text-gray-500">
-													No contact submissions yet.
-												</p>
-											)
-										}
+											}
+										</select>
+									</div>
+									<div>
+										<label for="quote-payout-filter">Payout</label>
+										<select id="quote-payout-filter">
+											<option value="all">Any payout</option>
+											<option value="has-payout">Has payout</option>
+											<option value="missing-payout">Missing payout</option>
+										</select>
 									</div>
 								</div>
 
-								<div class="rounded-[2rem] bg-white p-6 shadow-xl ring-1 ring-gray-200">
-									<div class="flex items-end justify-between gap-4">
-										<div>
-											<p class="text-sm font-semibold uppercase tracking-[0.16em] text-amber-700">Quote form</p>
-											<h2 class="mt-2 text-2xl font-bold text-gray-950">Quote requests</h2>
-										</div>
-										<p class="text-4xl font-bold tracking-[-0.03em] text-gray-950">{quotes.length}</p>
+								<div class="overflow-hidden rounded-[1.5rem] border border-gray-200">
+									<div class="overflow-x-auto">
+										<table class="min-w-full border-collapse text-left">
+											<thead class="bg-stone-100">
+												<tr class="text-sm uppercase tracking-[0.12em] text-gray-500">
+													<th class="px-4 py-4 font-semibold">Customer</th>
+													<th class="px-4 py-4 font-semibold">Location</th>
+													<th class="px-4 py-4 font-semibold">Contact</th>
+													<th class="px-4 py-4 font-semibold">Keys</th>
+													<th class="px-4 py-4 font-semibold">Payout</th>
+													<th class="px-4 py-4 font-semibold">Submitted</th>
+													<th class="px-4 py-4 font-semibold">Details</th>
+												</tr>
+											</thead>
+											<tbody id="quote-table-body" class="divide-y divide-gray-200 bg-white">
+												{
+													quotes.length ? (
+														quotes.map((quote) => (
+															<tr
+																data-quote-row
+																data-state={quote.customer_state.toUpperCase()}
+																data-has-payout={quote.estimated_payout ? "true" : "false"}
+																data-search={`${quote.customer_name} ${quote.customer_email} ${quote.customer_phone} ${quote.customer_address} ${quote.customer_city} ${quote.customer_state} ${quote.customer_zip} ${quote.quote_summary} ${quote.estimated_payout ?? ""}`.toLowerCase()}
+																class="align-top"
+															>
+																<td class="px-4 py-4">
+																	<div class="min-w-52">
+																		<p class="font-bold text-gray-950">{quote.customer_name}</p>
+																		<p class="mt-1 text-sm text-gray-500">#{quote.id.slice(0, 8)}</p>
+																	</div>
+																</td>
+																<td class="px-4 py-4">
+																	<div class="min-w-40 text-sm leading-6 text-gray-700">
+																		<p>{quote.customer_city}, {quote.customer_state}</p>
+																		<p>{quote.customer_zip}</p>
+																		<p class="mt-1 text-gray-500">{quote.customer_address}</p>
+																	</div>
+																</td>
+																<td class="px-4 py-4">
+																	<div class="min-w-52 text-sm leading-6">
+																		<p class="font-medium text-gray-950">{quote.customer_email}</p>
+																		<p class="text-gray-600">{quote.customer_phone}</p>
+																	</div>
+																</td>
+																<td class="px-4 py-4">
+																	<div class="min-w-24">
+																		<p class="text-lg font-bold text-gray-950">{quote.total_keys ?? "-"}</p>
+																		<p class="text-sm text-gray-500">total keys</p>
+																	</div>
+																</td>
+																<td class="px-4 py-4">
+																	<div class="min-w-28">
+																		<p class={`text-lg font-bold ${quote.estimated_payout ? "text-emerald-700" : "text-gray-400"}`}>
+																			{quote.estimated_payout ?? "Pending"}
+																		</p>
+																	</div>
+																</td>
+																<td class="px-4 py-4">
+																	<div class="min-w-32 text-sm leading-6 text-gray-700">
+																		<p>{formatCompactDate(quote.created_at)}</p>
+																		<p class="text-gray-500">{formatDateTime(quote.created_at).split(", ").slice(-1)[0]}</p>
+																	</div>
+																</td>
+																<td class="px-4 py-4">
+																	<details class="min-w-72 rounded-2xl bg-stone-50 p-3 ring-1 ring-gray-200">
+																		<summary class="cursor-pointer list-none text-sm font-semibold text-gray-900">
+																			View order
+																		</summary>
+																		<div class="mt-3 space-y-3 text-sm text-gray-700">
+																			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+																				<div>
+																					<p class="font-semibold text-gray-950">Submitted</p>
+																					<p>{formatDateTime(quote.created_at)}</p>
+																				</div>
+																				<div>
+																					<p class="font-semibold text-gray-950">Source</p>
+																					<p class="break-all">{quote.source_page ?? "Not provided"}</p>
+																				</div>
+																			</div>
+																			<div>
+																				<p class="font-semibold text-gray-950">Quote summary</p>
+																				<pre class="mt-2 overflow-x-auto whitespace-pre-wrap rounded-2xl bg-white px-3 py-3 text-sm leading-6 text-gray-700 ring-1 ring-gray-200">{quote.quote_summary}</pre>
+																			</div>
+																		</div>
+																	</details>
+																</td>
+															</tr>
+														))
+													) : (
+														<tr>
+															<td colspan="7" class="px-5 py-10 text-center text-sm text-gray-500">
+																No quote requests yet.
+															</td>
+														</tr>
+													)
+												}
+											</tbody>
+										</table>
 									</div>
+									<p id="quote-table-empty" class="hidden border-t border-gray-200 px-5 py-8 text-center text-sm text-gray-500">
+										No quote orders match your current filters.
+									</p>
+								</div>
+							</div>
 
-									<div class="mt-6 space-y-4">
-										{
-											quotes.length ? (
-												quotes.map((quote) => (
-													<article class="rounded-3xl border border-gray-200 bg-stone-50 p-5">
-														<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-															<div>
-																<h3 class="text-lg font-bold text-gray-950">{quote.customer_name}</h3>
-																<p class="mt-1 text-sm font-medium text-amber-800">{quote.customer_email}</p>
-																<p class="mt-1 text-sm text-gray-600">{quote.customer_phone}</p>
-																<p class="mt-1 text-sm text-gray-600">
-																	{quote.customer_address}, {quote.customer_city}, {quote.customer_state} {quote.customer_zip}
-																</p>
-															</div>
-															<div class="text-left sm:text-right">
-																<p class="text-sm text-gray-500">{formatDateTime(quote.created_at)}</p>
-																{
-																	quote.estimated_payout && (
-																		<p class="mt-2 text-lg font-bold text-emerald-700">{quote.estimated_payout}</p>
-																	)
-																}
-																{
-																	quote.total_keys !== null && (
-																		<p class="text-sm text-gray-600">{quote.total_keys} total keys</p>
-																	)
-																}
-															</div>
-														</div>
-														<pre class="mt-4 overflow-x-auto whitespace-pre-wrap rounded-2xl bg-white px-4 py-4 text-sm leading-6 text-gray-700 ring-1 ring-gray-200">{quote.quote_summary}</pre>
-														{
-															quote.source_page && (
-																<p class="mt-4 break-all text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
-																	Source: {quote.source_page}
-																</p>
-															)
-														}
-													</article>
-												))
-											) : (
-												<p class="rounded-3xl border border-dashed border-gray-300 px-5 py-8 text-sm text-gray-500">
-													No quote requests yet.
-												</p>
-											)
-										}
+							<div class="rounded-[2rem] bg-white p-6 shadow-xl ring-1 ring-gray-200">
+								<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+									<div>
+										<p class="text-sm font-semibold uppercase tracking-[0.16em] text-amber-700">Contact form</p>
+										<h2 class="mt-2 text-3xl font-bold text-gray-950">Contact messages</h2>
 									</div>
+									<p class="text-sm font-medium text-gray-500">
+										Recent messages: <span class="font-bold text-gray-950">{contacts.length}</span>
+									</p>
+								</div>
+
+								<div class="mt-6 divide-y divide-gray-200 rounded-[1.5rem] border border-gray-200 bg-white">
+									{
+										contacts.length ? (
+											contacts.map((contact) => (
+												<article class="grid grid-cols-1 gap-5 px-5 py-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.75fr)_minmax(0,0.75fr)]">
+													<div>
+														<p class="text-lg font-bold text-gray-950">
+															{contact.first_name} {contact.last_name}
+														</p>
+														<p class="mt-1 text-sm font-medium text-amber-800">{contact.email}</p>
+														<p class="mt-1 text-sm text-gray-600">{contact.phone_number ?? "No phone provided"}</p>
+													</div>
+													<div>
+														<p class="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500">Message</p>
+														<p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-gray-700">{contact.message}</p>
+													</div>
+													<div class="text-sm text-gray-600">
+														<p class="font-semibold text-gray-950">{formatDateTime(contact.created_at)}</p>
+														<p class="mt-3 break-all">{contact.source_page ?? "No source page"}</p>
+													</div>
+												</article>
+											))
+										) : (
+											<p class="px-5 py-10 text-center text-sm text-gray-500">No contact submissions yet.</p>
+										)
+									}
 								</div>
 							</div>
 						</div>
@@ -288,3 +410,62 @@ if (isAuthenticated && isConfigured) {
 		</Container>
 	</Section>
 </Layout>
+
+<script>
+	document.addEventListener("astro:page-load", () => {
+		const searchInput = document.getElementById("quote-search");
+		const stateFilter = document.getElementById("quote-state-filter");
+		const payoutFilter = document.getElementById("quote-payout-filter");
+		const quoteResultsCount = document.getElementById("quote-results-count");
+		const quoteEmptyState = document.getElementById("quote-table-empty");
+		const quoteRows = Array.from(document.querySelectorAll("[data-quote-row]"));
+
+		if (
+			!(
+				searchInput instanceof HTMLInputElement &&
+				stateFilter instanceof HTMLSelectElement &&
+				payoutFilter instanceof HTMLSelectElement &&
+				quoteResultsCount instanceof HTMLElement &&
+				quoteEmptyState instanceof HTMLElement
+			)
+		) {
+			return;
+		}
+
+		const applyQuoteFilters = () => {
+			const searchValue = searchInput.value.trim().toLowerCase();
+			const selectedState = stateFilter.value;
+			const selectedPayout = payoutFilter.value;
+			let visibleRows = 0;
+
+			for (const row of quoteRows) {
+				if (!(row instanceof HTMLElement)) {
+					continue;
+				}
+
+				const matchesSearch = !searchValue || (row.dataset.search ?? "").includes(searchValue);
+				const matchesState = selectedState === "all" || row.dataset.state === selectedState;
+				const hasPayout = row.dataset.hasPayout === "true";
+				const matchesPayout =
+					selectedPayout === "all" ||
+					(selectedPayout === "has-payout" && hasPayout) ||
+					(selectedPayout === "missing-payout" && !hasPayout);
+
+				const isVisible = matchesSearch && matchesState && matchesPayout;
+				row.style.display = isVisible ? "" : "none";
+
+				if (isVisible) {
+					visibleRows += 1;
+				}
+			}
+
+			quoteResultsCount.textContent = String(visibleRows);
+			quoteEmptyState.classList.toggle("hidden", visibleRows > 0);
+		};
+
+		searchInput.addEventListener("input", applyQuoteFilters);
+		stateFilter.addEventListener("change", applyQuoteFilters);
+		payoutFilter.addEventListener("change", applyQuoteFilters);
+		applyQuoteFilters();
+	});
+</script>
