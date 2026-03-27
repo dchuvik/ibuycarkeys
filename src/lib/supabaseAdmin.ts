@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-const getEnv = (key: string) => globalThis.process?.env?.[key]?.trim() ?? "";
+const getEnv = (key: string) => globalThis.process?.env?.[key]?.trim() ?? import.meta.env[key]?.trim?.() ?? "";
 
 const getServiceRoleKey = () => getEnv("SUPABASE_SERVICE_ROLE_KEY");
 

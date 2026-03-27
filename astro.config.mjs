@@ -10,7 +10,7 @@ export default defineConfig({
 	site: "https://ibuycarkeys.com",
 	base: "/",
 	integrations: [mdx(), playformInline({ Critters: true })],
-	output: "static",
+	output: "server",
 	devToolbar: {
 		enabled: false,
 	},

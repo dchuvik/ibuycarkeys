@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 
 export const adminSessionCookieName = "ibuycarkeys_admin_session";
 
-const getEnv = (key: string) => globalThis.process?.env?.[key]?.trim() ?? "";
+const getEnv = (key: string) => globalThis.process?.env?.[key]?.trim() ?? import.meta.env[key]?.trim?.() ?? "";
 
 const getAdminPassword = () => getEnv("ADMIN_PASSWORD");
 
