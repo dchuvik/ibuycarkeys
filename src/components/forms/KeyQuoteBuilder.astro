@@ -1,9 +1,12 @@
 ---
 import { priceCatalog } from "~/data/priceCatalog";
 import PriceCatalog from "../PriceCatalog.astro";
+
+const supabaseUrl = process.env.SUPABASE_URL ?? "";
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY ?? "";
 ---
 
-<section class="space-y-8">
+<section id="quote-builder-root" class="space-y-8" data-supabase-url={supabaseUrl} data-supabase-anon-key={supabaseAnonKey}>
 	<form
 		id="quote-request-form"
 		name="quote-cart"
@@ -342,6 +345,8 @@ import PriceCatalog from "../PriceCatalog.astro";
 		const closeQuoteRequestButtons = Array.from(document.querySelectorAll("[data-close-quote-request]"));
 		const quoteCartFeedback = document.getElementById("quote-cart-feedback");
 		const quoteSubmissionToast = document.getElementById("quote-submission-toast");
+		const quoteRoot = document.getElementById("quote-builder-root");
+		let authSession = null;
 		let quoteCartFeedbackTimer = 0;
 		let quoteSubmissionToastTimer = 0;
 
@@ -384,16 +389,48 @@ import PriceCatalog from "../PriceCatalog.astro";
 				quoteRequestSourcePage instanceof HTMLInputElement &&
 				quoteRequestStatus instanceof HTMLElement &&
 				quoteCartFeedback instanceof HTMLElement &&
-				quoteSubmissionToast instanceof HTMLElement
+				quoteSubmissionToast instanceof HTMLElement &&
+				quoteRoot instanceof HTMLElement
 			)
 		) {
 			return;
 		}
 
+		const hydrateSignedInProfile = async () => {
+			const supabaseUrl = quoteRoot.dataset.supabaseUrl ?? "";
+			const supabaseAnonKey = quoteRoot.dataset.supabaseAnonKey ?? "";
+
+			if (!supabaseUrl || !supabaseAnonKey) {
+				return;
+			}
+
+			const { createClient } = await import("@supabase/supabase-js");
+			const supabase = createClient(supabaseUrl, supabaseAnonKey);
+			const {
+				data: { session },
+			} = await supabase.auth.getSession();
+			authSession = session;
+
+			if (!session) {
+				return;
+			}
+
+			const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).maybeSingle();
+
+			quoteRequestName.value = profile?.full_name ?? session.user.user_metadata?.full_name ?? quoteRequestName.value;
+			quoteRequestEmail.value = session.user.email ?? quoteRequestEmail.value;
+			quoteRequestPhone.value = profile?.phone ?? session.user.user_metadata?.phone ?? quoteRequestPhone.value;
+			quoteRequestAddress.value = profile?.address ?? quoteRequestAddress.value;
+			quoteRequestCity.value = profile?.city ?? quoteRequestCity.value;
+			quoteRequestState.value = profile?.state ?? quoteRequestState.value;
+			quoteRequestZip.value = profile?.zip ?? quoteRequestZip.value;
+		};
+
 		const openQuoteRequest = () => {
 			quoteRequestForm.classList.remove("hidden");
 			quoteRequestForm.classList.add("flex");
 			document.body.classList.add("overflow-hidden");
+			void hydrateSignedInProfile();
 		};
 
 		const closeQuoteRequest = () => {
@@ -724,7 +761,10 @@ import PriceCatalog from "../PriceCatalog.astro";
 			try {
 				const response = await fetch("/api/quote-request.json", {
 					method: "POST",
-					headers: { "Content-Type": "application/x-www-form-urlencoded" },
+					headers: {
+						"Content-Type": "application/x-www-form-urlencoded",
+						...(authSession?.access_token ? { Authorization: `Bearer ${authSession.access_token}` } : {}),
+					},
 					body: payload.toString(),
 				});
 
@@ -751,6 +791,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 		});
 
 		skuSelect.selectedIndex = -1;
+		void hydrateSignedInProfile();
 		updatePreview();
 		renderCart();
 	});
