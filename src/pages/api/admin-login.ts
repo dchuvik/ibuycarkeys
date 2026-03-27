@@ -12,12 +12,20 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 	const formData = await request.formData();
 	const password = formData.get("password")?.toString() ?? "";
 
+	const redirectTo = (pathname: string) =>
+		new Response(null, {
+			status: 302,
+			headers: {
+				Location: new URL(pathname, url).toString(),
+			},
+		});
+
 	if (!isAdminPasswordConfigured()) {
-		return Response.redirect(new URL("/admin/?error=setup", url), 302);
+		return redirectTo("/admin/?error=setup");
 	}
 
 	if (!isValidAdminPassword(password)) {
-		return Response.redirect(new URL("/admin/?error=invalid", url), 302);
+		return redirectTo("/admin/?error=invalid");
 	}
 
 	cookies.set(adminSessionCookieName, createAdminSessionToken(), {
@@ -28,5 +36,5 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 		maxAge: 60 * 60 * 12,
 	});
 
-	return Response.redirect(new URL("/admin/", url), 302);
+	return redirectTo("/admin/");
 };
