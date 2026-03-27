@@ -8,8 +8,6 @@ import PriceCatalog from "../PriceCatalog.astro";
 		id="quote-request-form"
 		name="quote-cart"
 		method="POST"
-		data-netlify="true"
-		netlify-honeypot="bot-field"
 		class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-950/70 p-4"
 	>
 		<div class="absolute inset-0" data-close-quote-request></div>
@@ -28,13 +26,11 @@ import PriceCatalog from "../PriceCatalog.astro";
 					class="inline-flex size-11 items-center justify-center rounded-full border border-gray-200 text-xl leading-none text-gray-500 transition hover:border-gray-300 hover:text-gray-700"
 					aria-label="Close quote form"
 				>
-					×
+					&times;
 				</button>
 			</div>
 
-			<input type="hidden" name="form-name" value="quote-cart" />
 			<input type="hidden" name="bot-field" />
-			<input type="hidden" name="recipient" value="dchuvik@gmail.com" />
 			<input type="hidden" name="total_keys" id="quote-request-total-keys" />
 			<input type="hidden" name="estimated_payout" id="quote-request-estimated-payout" />
 			<input type="hidden" name="submitted_at" id="quote-request-submitted-at" />
@@ -726,7 +722,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 			quoteRequestStatus.textContent = "Sending your quote...";
 
 			try {
-				const response = await fetch("/", {
+				const response = await fetch("/api/quote-request.json", {
 					method: "POST",
 					headers: { "Content-Type": "application/x-www-form-urlencoded" },
 					body: payload.toString(),
@@ -759,3 +755,4 @@ import PriceCatalog from "../PriceCatalog.astro";
 		renderCart();
 	});
 </script>
+

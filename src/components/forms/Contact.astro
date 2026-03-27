@@ -1,5 +1,6 @@
 ---
 const wasSubmitted = Astro.url.searchParams.get("submitted") === "true";
+const hasError = Astro.url.searchParams.has("error");
 ---
 
 {
@@ -10,14 +11,19 @@ const wasSubmitted = Astro.url.searchParams.get("submitted") === "true";
 	)
 }
 
+{
+	hasError && (
+		<div class="mb-6 rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700 ring-1 ring-red-200">
+			Your message could not be sent right now. Please try again.
+		</div>
+	)
+}
+
 <form
 	name="contact"
 	method="POST"
-	action="/contact/?submitted=true"
-	data-netlify="true"
-	netlify-honeypot="bot-field"
+	action="/api/contact-request.json"
 >
-	<input type="hidden" name="form-name" value="contact" />
 	<input type="hidden" name="bot-field" />
 
 	<div class="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">

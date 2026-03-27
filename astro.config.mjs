@@ -7,7 +7,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
 export default defineConfig({
-	site: "https://astro-hyperdrive.netlify.app",
+	site: "https://ibuycarkeys.com",
 	base: "/",
 	integrations: [mdx(), playformInline({ Critters: true })],
 	output: "static",
@@ -19,3 +19,4 @@ export default defineConfig({
 		plugins: [tailwindcss()],
 	},
 });
+
