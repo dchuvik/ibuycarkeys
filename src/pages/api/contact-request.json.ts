@@ -32,6 +32,8 @@ export const POST: APIRoute = async ({ request }) => {
 	const email = getFieldValue(formData, "email");
 	const phoneNumber = getFieldValue(formData, "phone-number");
 	const message = getFieldValue(formData, "message");
+	const clientTimezone = getFieldValue(formData, "client_timezone");
+	const clientUtcOffsetMinutes = getFieldValue(formData, "client_utc_offset_minutes");
 
 	if (!firstName || !lastName || !email || !message) {
 		return createResponse(request, "/contact/?error=missing-fields", 400, {
@@ -48,6 +50,8 @@ export const POST: APIRoute = async ({ request }) => {
 		message,
 		source_page: request.headers.get("referer"),
 		submitted_at: new Date().toISOString(),
+		client_timezone: clientTimezone || null,
+		client_utc_offset_minutes: clientUtcOffsetMinutes ? Number.parseInt(clientUtcOffsetMinutes, 10) : null,
 	});
 
 	if (error) {

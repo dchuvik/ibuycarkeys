@@ -22,6 +22,8 @@ type ContactMessage = {
 	source_page: string | null;
 	submitted_at: string;
 	created_at: string;
+	client_timezone: string | null;
+	client_utc_offset_minutes: number | null;
 };
 
 type QuoteRequest = {
@@ -39,6 +41,8 @@ type QuoteRequest = {
 	source_page: string | null;
 	submitted_at: string;
 	created_at: string;
+	client_timezone: string | null;
+	client_utc_offset_minutes: number | null;
 };
 
 let contacts: ContactMessage[] = [];
@@ -50,6 +54,18 @@ const formatDateTime = (value: string) =>
 		dateStyle: "medium",
 		timeStyle: "short",
 	}).format(new Date(value));
+
+const formatDateTimeForTimezone = (value: string, timeZone?: string | null) => {
+	try {
+		return new Intl.DateTimeFormat("en-US", {
+			dateStyle: "medium",
+			timeStyle: "short",
+			...(timeZone ? { timeZone } : {}),
+		}).format(new Date(value));
+	} catch {
+		return formatDateTime(value);
+	}
+};
 
 const formatCompactDate = (value: string) =>
 	new Intl.DateTimeFormat("en-US", {
@@ -317,9 +333,11 @@ const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.loc
 																	</div>
 																</td>
 																<td class="px-4 py-4">
-																	<div class="min-w-32 text-sm leading-6 text-gray-700">
+															<div class="min-w-32 text-sm leading-6 text-gray-700">
 																		<p>{formatCompactDate(quote.created_at)}</p>
-																		<p class="text-gray-500">{formatDateTime(quote.created_at).split(", ").slice(-1)[0]}</p>
+																		<p class="text-gray-500">
+																			{formatDateTimeForTimezone(quote.created_at, quote.client_timezone).split(", ").slice(-1)[0]}
+																		</p>
 																	</div>
 																</td>
 																<td class="px-4 py-4">
@@ -331,7 +349,12 @@ const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.loc
 																			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 																				<div>
 																					<p class="font-semibold text-gray-950">Submitted</p>
-																					<p>{formatDateTime(quote.created_at)}</p>
+																					<p>{formatDateTimeForTimezone(quote.created_at, quote.client_timezone)}</p>
+																					{
+																						quote.client_timezone && (
+																							<p class="mt-1 text-xs uppercase tracking-[0.12em] text-gray-500">{quote.client_timezone}</p>
+																						)
+																					}
 																				</div>
 																				<div>
 																					<p class="font-semibold text-gray-950">Source</p>

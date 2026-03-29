@@ -35,6 +35,8 @@ import PriceCatalog from "../PriceCatalog.astro";
 			<input type="hidden" name="estimated_payout" id="quote-request-estimated-payout" />
 			<input type="hidden" name="submitted_at" id="quote-request-submitted-at" />
 			<input type="hidden" name="source_page" id="quote-request-source-page" />
+			<input type="hidden" name="client_timezone" id="quote-request-client-timezone" />
+			<input type="hidden" name="client_utc_offset_minutes" id="quote-request-client-utc-offset" />
 
 			<div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
 				<div>
@@ -338,6 +340,8 @@ import PriceCatalog from "../PriceCatalog.astro";
 		const quoteRequestEstimatedPayout = document.getElementById("quote-request-estimated-payout");
 		const quoteRequestSubmittedAt = document.getElementById("quote-request-submitted-at");
 		const quoteRequestSourcePage = document.getElementById("quote-request-source-page");
+		const quoteRequestClientTimezone = document.getElementById("quote-request-client-timezone");
+		const quoteRequestClientUtcOffset = document.getElementById("quote-request-client-utc-offset");
 		const quoteRequestStatus = document.getElementById("quote-request-status");
 		const closeQuoteRequestButtons = Array.from(document.querySelectorAll("[data-close-quote-request]"));
 		const quoteCartFeedback = document.getElementById("quote-cart-feedback");
@@ -382,6 +386,8 @@ import PriceCatalog from "../PriceCatalog.astro";
 				quoteRequestEstimatedPayout instanceof HTMLInputElement &&
 				quoteRequestSubmittedAt instanceof HTMLInputElement &&
 				quoteRequestSourcePage instanceof HTMLInputElement &&
+				quoteRequestClientTimezone instanceof HTMLInputElement &&
+				quoteRequestClientUtcOffset instanceof HTMLInputElement &&
 				quoteRequestStatus instanceof HTMLElement &&
 				quoteCartFeedback instanceof HTMLElement &&
 				quoteSubmissionToast instanceof HTMLElement
@@ -675,6 +681,8 @@ import PriceCatalog from "../PriceCatalog.astro";
 			quoteRequestEstimatedPayout.value = currencyFormatter.format(submission.totalPayout);
 			quoteRequestSubmittedAt.value = submission.createdAt;
 			quoteRequestSourcePage.value = window.location.href;
+			quoteRequestClientTimezone.value = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
+			quoteRequestClientUtcOffset.value = String(new Date().getTimezoneOffset() * -1);
 			quoteRequestStatus.textContent = "";
 			sendQuoteStatus.textContent = "";
 			openQuoteRequest();

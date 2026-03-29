@@ -29,6 +29,8 @@ export const POST: APIRoute = async ({ request }) => {
 	const estimatedPayout = getFieldValue(formData, "estimated_payout");
 	const sourcePage = getFieldValue(formData, "source_page");
 	const submittedAt = getFieldValue(formData, "submitted_at");
+	const clientTimezone = getFieldValue(formData, "client_timezone");
+	const clientUtcOffsetMinutes = getFieldValue(formData, "client_utc_offset_minutes");
 
 	if (
 		!customerName ||
@@ -59,6 +61,8 @@ export const POST: APIRoute = async ({ request }) => {
 		estimated_payout: estimatedPayout || null,
 		source_page: sourcePage || request.headers.get("referer"),
 		submitted_at: submittedAt || new Date().toISOString(),
+		client_timezone: clientTimezone || null,
+		client_utc_offset_minutes: clientUtcOffsetMinutes ? Number.parseInt(clientUtcOffsetMinutes, 10) : null,
 	});
 
 	if (error) {

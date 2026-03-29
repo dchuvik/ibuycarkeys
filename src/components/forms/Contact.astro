@@ -23,8 +23,11 @@ const hasError = Astro.url.searchParams.has("error");
 	name="contact"
 	method="POST"
 	action="/api/contact-request.json"
+	id="contact-form"
 >
 	<input type="hidden" name="bot-field" />
+	<input type="hidden" name="client_timezone" id="contact-client-timezone" />
+	<input type="hidden" name="client_utc_offset_minutes" id="contact-client-utc-offset" />
 
 	<div class="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
 		<div>
@@ -62,3 +65,17 @@ const hasError = Astro.url.searchParams.has("error");
 		<button type="submit" class="button button-yellow">Send message</button>
 	</div>
 </form>
+
+<script>
+	document.addEventListener("astro:page-load", () => {
+		const timezoneField = document.getElementById("contact-client-timezone");
+		const utcOffsetField = document.getElementById("contact-client-utc-offset");
+
+		if (!(timezoneField instanceof HTMLInputElement && utcOffsetField instanceof HTMLInputElement)) {
+			return;
+		}
+
+		timezoneField.value = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
+		utcOffsetField.value = String(new Date().getTimezoneOffset() * -1);
+	});
+</script>
