@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { getSupabaseAdmin } from "~/lib/supabaseAdmin";
+import { supabase } from "~/lib/supabase";
 import { supabaseTables } from "~/lib/supabaseTables";
 
 export const prerender = false;
@@ -9,9 +9,6 @@ const getFieldValue = (formData: FormData, fieldName: string) => formData.get(fi
 export const POST: APIRoute = async ({ request }) => {
 	const formData = await request.formData();
 	const botField = getFieldValue(formData, "bot-field");
-	const authorization = request.headers.get("authorization");
-	const token = authorization?.startsWith("Bearer ") ? authorization.slice(7) : "";
-	const supabaseAdmin = getSupabaseAdmin();
 
 	if (botField) {
 		return new Response(JSON.stringify({ ok: true }), {
@@ -49,16 +46,7 @@ export const POST: APIRoute = async ({ request }) => {
 		});
 	}
 
-	let userId: string | null = null;
-
-	if (token) {
-		const { data, error } = await supabaseAdmin.auth.getUser(token);
-		if (!error) {
-			userId = data.user?.id ?? null;
-		}
-	}
-
-	const { error } = await supabaseAdmin.from(supabaseTables.quoteRequests).insert({
+	const { error } = await supabase.from(supabaseTables.quoteRequests).insert({
 		customer_name: customerName,
 		customer_email: customerEmail,
 		customer_phone: customerPhone,
@@ -71,7 +59,6 @@ export const POST: APIRoute = async ({ request }) => {
 		estimated_payout: estimatedPayout || null,
 		source_page: sourcePage || request.headers.get("referer"),
 		submitted_at: submittedAt || new Date().toISOString(),
-		user_id: userId,
 	});
 
 	if (error) {

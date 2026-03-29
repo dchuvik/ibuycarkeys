@@ -16,11 +16,6 @@ export const menuMain: MainMenuItem[] = [
 		label: "Supported Makes",
 		url: "/makes",
 	},
-	{
-		id: "account",
-		label: "Account",
-		url: "/account",
-	},
 ];
 
 export const menuNavigation: MenuNavigation = {
@@ -42,10 +37,6 @@ export const menuNavigation: MenuNavigation = {
 			name: "Contact",
 			url: "/contact",
 		},
-		{
-			name: "Account",
-			url: "/account",
-		},
 	],
 };
 
@@ -63,10 +54,6 @@ export const menuService: MenuNavigation = {
 		{
 			name: "Contact",
 			url: "/contact",
-		},
-		{
-			name: "Account",
-			url: "/account",
 		},
 	],
 };
