@@ -437,6 +437,24 @@ import PriceCatalog from "../PriceCatalog.astro";
 			}, 4200);
 		};
 
+		const sendNetlifyNotification = async (payload) => {
+			const body = new URLSearchParams();
+
+			Object.entries(payload).forEach(([key, value]) => {
+				body.append(key, String(value));
+			});
+
+			try {
+				await fetch("/netlify-form-blueprints", {
+					method: "POST",
+					headers: { "Content-Type": "application/x-www-form-urlencoded" },
+					body: body.toString(),
+				});
+			} catch {
+				// Keep the quote submission successful even if the notification copy fails.
+			}
+		};
+
 		const formatPhoneNumber = (value) => {
 			const digits = value.replace(/\D/g, "").slice(0, 10);
 
@@ -789,6 +807,24 @@ import PriceCatalog from "../PriceCatalog.astro";
 
 				sendQuoteStatus.textContent = "Your quote was sent successfully. We will reach out soon.";
 				quoteRequestStatus.textContent = "Your quote was sent successfully.";
+				void sendNetlifyNotification({
+					"form-name": "quote-notification",
+					customer_name: quoteRequestName.value,
+					customer_email: quoteRequestEmail.value,
+					customer_phone: quoteRequestPhone.value,
+					customer_address: quoteRequestAddress.value,
+					customer_city: quoteRequestCity.value,
+					customer_state: quoteRequestState.value,
+					customer_zip: quoteRequestZip.value,
+					total_keys: quoteRequestTotalKeys.value,
+					estimated_payout: quoteRequestEstimatedPayout.value,
+					quote_summary: quoteRequestSummary.value,
+					submitted_at: quoteRequestSubmittedAt.value,
+					source_page: quoteRequestSourcePage.value,
+					client_timezone: quoteRequestClientTimezone.value,
+					client_utc_offset_minutes: quoteRequestClientUtcOffset.value,
+					admin_review_url: `${window.location.origin}/admin/`,
+				});
 				showQuoteSubmissionToast();
 				quoteRequestForm.reset();
 				window.setTimeout(closeQuoteRequest, 900);

@@ -68,14 +68,85 @@ const hasError = Astro.url.searchParams.has("error");
 
 <script>
 	document.addEventListener("astro:page-load", () => {
+		const form = document.getElementById("contact-form");
 		const timezoneField = document.getElementById("contact-client-timezone");
 		const utcOffsetField = document.getElementById("contact-client-utc-offset");
 
-		if (!(timezoneField instanceof HTMLInputElement && utcOffsetField instanceof HTMLInputElement)) {
+		if (
+			!(
+				form instanceof HTMLFormElement &&
+				timezoneField instanceof HTMLInputElement &&
+				utcOffsetField instanceof HTMLInputElement
+			)
+		) {
 			return;
 		}
 
 		timezoneField.value = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
 		utcOffsetField.value = String(new Date().getTimezoneOffset() * -1);
+
+		const sendNetlifyNotification = async (payload) => {
+			const body = new URLSearchParams();
+
+			Object.entries(payload).forEach(([key, value]) => {
+				body.append(key, String(value));
+			});
+
+			try {
+				await fetch("/netlify-form-blueprints", {
+					method: "POST",
+					headers: { "Content-Type": "application/x-www-form-urlencoded" },
+					body: body.toString(),
+				});
+			} catch {
+				// Keep the contact submission successful even if the notification copy fails.
+			}
+		};
+
+		form.addEventListener("submit", async (event) => {
+			event.preventDefault();
+
+			if (!form.reportValidity()) {
+				return;
+			}
+
+			const formData = new FormData(form);
+			const payload = new URLSearchParams();
+
+			formData.forEach((value, key) => {
+				payload.append(key, String(value));
+			});
+
+			try {
+				const response = await fetch("/api/contact-request.json", {
+					method: "POST",
+					headers: {
+						Accept: "application/json",
+						"Content-Type": "application/x-www-form-urlencoded",
+					},
+					body: payload.toString(),
+				});
+
+				if (!response.ok) {
+					throw new Error("Submission failed");
+				}
+
+				void sendNetlifyNotification({
+					"form-name": "contact-notification",
+					"first-name": String(formData.get("first-name") ?? ""),
+					"last-name": String(formData.get("last-name") ?? ""),
+					email: String(formData.get("email") ?? ""),
+					"phone-number": String(formData.get("phone-number") ?? ""),
+					message: String(formData.get("message") ?? ""),
+					client_timezone: timezoneField.value,
+					client_utc_offset_minutes: utcOffsetField.value,
+					admin_review_url: `${window.location.origin}/admin/`,
+				});
+
+				window.location.href = "/contact/?submitted=true";
+			} catch {
+				window.location.href = "/contact/?error=submit-failed";
+			}
+		});
 	});
 </script>

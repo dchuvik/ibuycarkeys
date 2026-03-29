@@ -1,0 +1,44 @@
+---
+export const prerender = true;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="robots" content="noindex,nofollow" />
+		<title>Netlify Form Blueprints</title>
+	</head>
+	<body>
+		<form name="quote-notification" method="POST" data-netlify="true" netlify hidden>
+			<input type="hidden" name="form-name" value="quote-notification" />
+			<input type="text" name="customer_name" />
+			<input type="email" name="customer_email" />
+			<input type="text" name="customer_phone" />
+			<input type="text" name="customer_address" />
+			<input type="text" name="customer_city" />
+			<input type="text" name="customer_state" />
+			<input type="text" name="customer_zip" />
+			<input type="text" name="total_keys" />
+			<input type="text" name="estimated_payout" />
+			<textarea name="quote_summary"></textarea>
+			<input type="text" name="submitted_at" />
+			<input type="text" name="source_page" />
+			<input type="text" name="client_timezone" />
+			<input type="text" name="client_utc_offset_minutes" />
+			<input type="url" name="admin_review_url" />
+		</form>
+
+		<form name="contact-notification" method="POST" data-netlify="true" netlify hidden>
+			<input type="hidden" name="form-name" value="contact-notification" />
+			<input type="text" name="first-name" />
+			<input type="text" name="last-name" />
+			<input type="email" name="email" />
+			<input type="text" name="phone-number" />
+			<textarea name="message"></textarea>
+			<input type="text" name="client_timezone" />
+			<input type="text" name="client_utc_offset_minutes" />
+			<input type="url" name="admin_review_url" />
+		</form>
+	</body>
+</html>
