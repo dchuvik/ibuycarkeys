@@ -43,6 +43,7 @@ type QuoteRequest = {
 	created_at: string;
 	client_timezone: string | null;
 	client_utc_offset_minutes: number | null;
+	status: "new" | "approved" | "rejected" | null;
 };
 
 let contacts: ContactMessage[] = [];
@@ -114,6 +115,11 @@ if (isAuthenticated && isConfigured) {
 }
 
 const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.localeCompare(right));
+const quoteStatusCounts = {
+	new: quotes.filter((quote) => (quote.status ?? "new") === "new").length,
+	approved: quotes.filter((quote) => quote.status === "approved").length,
+	rejected: quotes.filter((quote) => quote.status === "rejected").length,
+};
 ---
 
 <Layout
@@ -125,6 +131,66 @@ const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.loc
 	<Section class:list={"bg-gradient-to-br from-stone-100 via-white to-amber-50"}>
 		<Container>
 			<div class="mx-auto max-w-7xl space-y-8">
+				<div
+					id="email-draft-panel"
+					class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-950/70 p-4"
+				>
+					<div id="email-draft-close" class="absolute inset-0"></div>
+					<div class="relative z-10 w-full max-w-2xl rounded-[2rem] bg-white p-6 shadow-2xl ring-1 ring-gray-200">
+						<div class="flex items-start justify-between gap-4">
+							<div>
+								<p class="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700">Email draft</p>
+								<h2 class="mt-2 text-2xl font-bold text-gray-950">Review and send</h2>
+								<p class="mt-2 text-sm leading-6 text-gray-600">
+									If your device does not open a native mail app, you can copy this draft and paste it into your email client.
+								</p>
+							</div>
+							<button
+								type="button"
+								id="email-draft-close-button"
+								class="inline-flex size-11 items-center justify-center rounded-full border border-gray-200 text-xl leading-none text-gray-500 transition hover:border-gray-300 hover:text-gray-700"
+								aria-label="Close email draft"
+							>
+								&times;
+							</button>
+						</div>
+
+						<div class="mt-5 space-y-4">
+							<div>
+								<p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">To</p>
+								<p id="email-draft-to" class="mt-2 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-gray-800 ring-1 ring-gray-200"></p>
+							</div>
+							<div>
+								<p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Subject</p>
+								<p id="email-draft-subject" class="mt-2 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-gray-800 ring-1 ring-gray-200"></p>
+							</div>
+							<div>
+								<p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Message</p>
+								<pre id="email-draft-body" class="mt-2 overflow-x-auto whitespace-pre-wrap rounded-2xl bg-stone-50 px-4 py-4 text-sm leading-6 text-gray-800 ring-1 ring-gray-200"></pre>
+							</div>
+						</div>
+
+						<p id="email-draft-status" class="mt-4 text-sm text-emerald-700"></p>
+
+						<div class="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+							<button
+								type="button"
+								id="email-draft-copy"
+								class="button button-white min-h-11 rounded-full border border-gray-200 px-5 text-sm"
+							>
+								Copy email
+							</button>
+							<a
+								id="email-draft-open-mailto"
+								href="#"
+								class="button button-black inline-flex min-h-11 items-center justify-center rounded-full px-5 text-sm"
+							>
+								Open mail app
+							</a>
+						</div>
+					</div>
+				</div>
+
 				<div class="flex flex-col gap-4 rounded-[2rem] bg-gray-950 px-6 py-8 text-white shadow-2xl sm:px-8">
 					<p class="text-sm font-semibold uppercase tracking-[0.22em] text-amber-300">Internal dashboard</p>
 					<h1 class="text-4xl font-bold tracking-[-0.03em]">Submission admin</h1>
@@ -224,6 +290,23 @@ const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.loc
 									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">{sortedQuoteStates.length}</p>
 								</div>
 								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
+									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">New orders</p>
+									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">
+										{quoteStatusCounts.new}
+									</p>
+								</div>
+							</div>
+
+							<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
+									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Approved</p>
+									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-emerald-700">{quoteStatusCounts.approved}</p>
+								</div>
+								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
+									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Rejected</p>
+									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-rose-700">{quoteStatusCounts.rejected}</p>
+								</div>
+								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
 									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Orders with payout</p>
 									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">
 										{quotes.filter((quote) => Boolean(quote.estimated_payout)).length}
@@ -245,7 +328,12 @@ const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.loc
 									</p>
 								</div>
 
-								<div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_220px_220px]">
+								<div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
+									Approve and Reject use your device's native email app. Approval also downloads a PDF invoice that the admin
+									should attach manually before sending.
+								</div>
+
+								<div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_200px_200px_200px]">
 									<div>
 										<label for="quote-search">Search orders</label>
 										<input
@@ -273,115 +361,155 @@ const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.loc
 											<option value="missing-payout">Missing payout</option>
 										</select>
 									</div>
+									<div>
+										<label for="quote-status-filter">Status</label>
+										<select id="quote-status-filter">
+											<option value="all">All statuses</option>
+											<option value="new">New</option>
+											<option value="approved">Approved</option>
+											<option value="rejected">Rejected</option>
+										</select>
+									</div>
 								</div>
 
-								<div class="overflow-hidden rounded-[1.5rem] border border-gray-200">
-									<div class="overflow-x-auto">
-										<table class="min-w-full border-collapse text-left">
-											<thead class="bg-stone-100">
-												<tr class="text-sm uppercase tracking-[0.12em] text-gray-500">
-													<th class="px-4 py-4 font-semibold">Customer</th>
-													<th class="px-4 py-4 font-semibold">Location</th>
-													<th class="px-4 py-4 font-semibold">Contact</th>
-													<th class="px-4 py-4 font-semibold">Keys</th>
-													<th class="px-4 py-4 font-semibold">Payout</th>
-													<th class="px-4 py-4 font-semibold">Submitted</th>
-													<th class="px-4 py-4 font-semibold">Details</th>
-												</tr>
-											</thead>
-											<tbody id="quote-table-body" class="divide-y divide-gray-200 bg-white">
-												{
-													quotes.length ? (
-														quotes.map((quote) => (
-															<tr
-																data-quote-row
-																data-state={quote.customer_state.toUpperCase()}
-																data-has-payout={quote.estimated_payout ? "true" : "false"}
-																data-search={`${quote.customer_name} ${quote.customer_email} ${quote.customer_phone} ${quote.customer_address} ${quote.customer_city} ${quote.customer_state} ${quote.customer_zip} ${quote.quote_summary} ${quote.estimated_payout ?? ""}`.toLowerCase()}
-																class="align-top"
-															>
-																<td class="px-4 py-4">
-																	<div class="min-w-52">
-																		<p class="font-bold text-gray-950">{quote.customer_name}</p>
-																		<p class="mt-1 text-sm text-gray-500">#{quote.id.slice(0, 8)}</p>
+								<div class="space-y-4">
+									{
+										quotes.length ? (
+											quotes.map((quote) => (
+												<article
+													data-quote-row
+													data-state={quote.customer_state.toUpperCase()}
+													data-status={quote.status ?? "new"}
+													data-has-payout={quote.estimated_payout ? "true" : "false"}
+													data-search={`${quote.customer_name} ${quote.customer_email} ${quote.customer_phone} ${quote.customer_address} ${quote.customer_city} ${quote.customer_state} ${quote.customer_zip} ${quote.quote_summary} ${quote.estimated_payout ?? ""}`.toLowerCase()}
+													class="rounded-[1.5rem] border border-gray-200 bg-white p-5 shadow-sm"
+												>
+													<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+														<div class="space-y-3">
+															<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+																<div>
+																	<p class="text-xl font-bold text-gray-950">{quote.customer_name}</p>
+																	<p class="mt-1 text-sm text-gray-500">#{quote.id.slice(0, 8)}</p>
+																</div>
+																<p
+																	class={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${
+																		(quote.status ?? "new") === "approved"
+																			? "bg-emerald-100 text-emerald-800"
+																			: (quote.status ?? "new") === "rejected"
+																				? "bg-rose-100 text-rose-800"
+																				: "bg-amber-100 text-amber-800"
+																	}`}
+																	data-quote-status-badge
+																>
+																	{quote.status ?? "new"}
+																</p>
+															</div>
+
+															<div class="grid grid-cols-1 gap-4 text-sm text-gray-700 md:grid-cols-2 xl:grid-cols-4">
+																<div class="rounded-2xl bg-stone-50 px-4 py-3">
+																	<p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Contact</p>
+																	<p class="mt-2 font-medium text-gray-950 break-all">{quote.customer_email}</p>
+																	<p class="mt-1 text-gray-600">{quote.customer_phone}</p>
+																</div>
+																<div class="rounded-2xl bg-stone-50 px-4 py-3">
+																	<p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Location</p>
+																	<p class="mt-2 font-medium text-gray-950">{quote.customer_city}, {quote.customer_state} {quote.customer_zip}</p>
+																	<p class="mt-1 text-gray-600">{quote.customer_address}</p>
+																</div>
+																<div class="rounded-2xl bg-stone-50 px-4 py-3">
+																	<p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Order</p>
+																	<p class="mt-2 text-lg font-bold text-gray-950">{quote.total_keys ?? "-"}</p>
+																	<p class="text-gray-600">total keys</p>
+																</div>
+																<div class="rounded-2xl bg-stone-50 px-4 py-3">
+																	<p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Payout / Submitted</p>
+																	<p class={`mt-2 text-lg font-bold ${quote.estimated_payout ? "text-emerald-700" : "text-gray-400"}`}>
+																		{quote.estimated_payout ?? "Pending"}
+																	</p>
+																	<p class="mt-1 text-gray-600">{formatCompactDate(quote.created_at)} at {formatDateTimeForTimezone(quote.created_at, quote.client_timezone).split(", ").slice(-1)[0]}</p>
+																</div>
+															</div>
+														</div>
+
+														<details class="w-full rounded-2xl bg-stone-50 p-4 ring-1 ring-gray-200 lg:max-w-xl">
+															<summary class="cursor-pointer list-none text-sm font-semibold text-gray-900">
+																View order details
+															</summary>
+															<div class="mt-4 space-y-4 text-sm text-gray-700">
+																<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+																	<div>
+																		<p class="font-semibold text-gray-950">Submitted</p>
+																		<p>{formatDateTimeForTimezone(quote.created_at, quote.client_timezone)}</p>
+																		{
+																			quote.client_timezone && (
+																				<p class="mt-1 text-xs uppercase tracking-[0.12em] text-gray-500">{quote.client_timezone}</p>
+																			)
+																		}
 																	</div>
-																</td>
-																<td class="px-4 py-4">
-																	<div class="min-w-40 text-sm leading-6 text-gray-700">
-																		<p>{quote.customer_city}, {quote.customer_state}</p>
-																		<p>{quote.customer_zip}</p>
-																		<p class="mt-1 text-gray-500">{quote.customer_address}</p>
+																	<div>
+																		<p class="font-semibold text-gray-950">Source</p>
+																		<p class="break-all">{quote.source_page ?? "Not provided"}</p>
 																	</div>
-																</td>
-																<td class="px-4 py-4">
-																	<div class="min-w-52 text-sm leading-6">
-																		<p class="font-medium text-gray-950">{quote.customer_email}</p>
-																		<p class="text-gray-600">{quote.customer_phone}</p>
-																	</div>
-																</td>
-																<td class="px-4 py-4">
-																	<div class="min-w-24">
-																		<p class="text-lg font-bold text-gray-950">{quote.total_keys ?? "-"}</p>
-																		<p class="text-sm text-gray-500">total keys</p>
-																	</div>
-																</td>
-																<td class="px-4 py-4">
-																	<div class="min-w-28">
-																		<p class={`text-lg font-bold ${quote.estimated_payout ? "text-emerald-700" : "text-gray-400"}`}>
-																			{quote.estimated_payout ?? "Pending"}
-																		</p>
-																	</div>
-																</td>
-																<td class="px-4 py-4">
-															<div class="min-w-32 text-sm leading-6 text-gray-700">
-																		<p>{formatCompactDate(quote.created_at)}</p>
-																		<p class="text-gray-500">
-																			{formatDateTimeForTimezone(quote.created_at, quote.client_timezone).split(", ").slice(-1)[0]}
-																		</p>
-																	</div>
-																</td>
-																<td class="px-4 py-4">
-																	<details class="min-w-72 rounded-2xl bg-stone-50 p-3 ring-1 ring-gray-200">
-																		<summary class="cursor-pointer list-none text-sm font-semibold text-gray-900">
-																			View order
-																		</summary>
-																		<div class="mt-3 space-y-3 text-sm text-gray-700">
-																			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-																				<div>
-																					<p class="font-semibold text-gray-950">Submitted</p>
-																					<p>{formatDateTimeForTimezone(quote.created_at, quote.client_timezone)}</p>
-																					{
-																						quote.client_timezone && (
-																							<p class="mt-1 text-xs uppercase tracking-[0.12em] text-gray-500">{quote.client_timezone}</p>
-																						)
-																					}
-																				</div>
-																				<div>
-																					<p class="font-semibold text-gray-950">Source</p>
-																					<p class="break-all">{quote.source_page ?? "Not provided"}</p>
-																				</div>
-																			</div>
-																			<div>
-																				<p class="font-semibold text-gray-950">Quote summary</p>
-																				<pre class="mt-2 overflow-x-auto whitespace-pre-wrap rounded-2xl bg-white px-3 py-3 text-sm leading-6 text-gray-700 ring-1 ring-gray-200">{quote.quote_summary}</pre>
-																			</div>
-																		</div>
-																	</details>
-																</td>
-															</tr>
-														))
-													) : (
-														<tr>
-															<td colspan="7" class="px-5 py-10 text-center text-sm text-gray-500">
-																No quote requests yet.
-															</td>
-														</tr>
-													)
-												}
-											</tbody>
-										</table>
-									</div>
-									<p id="quote-table-empty" class="hidden border-t border-gray-200 px-5 py-8 text-center text-sm text-gray-500">
+																</div>
+																<div>
+																	<p class="font-semibold text-gray-950">Quote summary</p>
+																	<pre class="mt-2 whitespace-pre-wrap rounded-2xl bg-white px-3 py-3 text-sm leading-6 text-gray-700 ring-1 ring-gray-200">{quote.quote_summary}</pre>
+																</div>
+																<div class="flex flex-col gap-3 border-t border-gray-200 pt-3 sm:flex-row sm:flex-wrap">
+																	<button
+																		type="button"
+																		class="button button-black min-h-11 rounded-full px-5 text-sm"
+																		data-approve-quote
+																		data-quote-id={quote.id}
+																		data-customer-name={quote.customer_name}
+																		data-customer-email={quote.customer_email}
+																		data-customer-phone={quote.customer_phone}
+																		data-customer-address={quote.customer_address}
+																		data-customer-city={quote.customer_city}
+																		data-customer-state={quote.customer_state}
+																		data-customer-zip={quote.customer_zip}
+																		data-total-keys={quote.total_keys ?? ""}
+																		data-estimated-payout={quote.estimated_payout ?? ""}
+																		data-created-at={quote.created_at}
+																		data-quote-summary={quote.quote_summary}
+																		data-current-status={quote.status ?? "new"}
+																	>
+																		Approve
+																	</button>
+																	<button
+																		type="button"
+																		class="button button-white min-h-11 rounded-full border border-gray-200 px-5 text-sm"
+																		data-reject-quote
+																		data-customer-name={quote.customer_name}
+																		data-customer-email={quote.customer_email}
+																		data-estimated-payout={quote.estimated_payout ?? ""}
+																		data-quote-id={quote.id}
+																		data-current-status={quote.status ?? "new"}
+																	>
+																		Reject
+																	</button>
+																	<button
+																		type="button"
+																		class="button button-yellow min-h-11 rounded-full px-5 text-sm"
+																		data-mark-new-quote
+																		data-quote-id={quote.id}
+																	>
+																		Mark New
+																	</button>
+																</div>
+															</div>
+														</details>
+													</div>
+												</article>
+											))
+										) : (
+											<div class="rounded-[1.5rem] border border-gray-200 bg-white px-5 py-10 text-center text-sm text-gray-500">
+												No quote requests yet.
+											</div>
+										)
+									}
+
+									<p id="quote-table-empty" class="hidden rounded-[1.5rem] border border-gray-200 bg-white px-5 py-8 text-center text-sm text-gray-500">
 										No quote orders match your current filters.
 									</p>
 								</div>
@@ -435,6 +563,8 @@ const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.loc
 </Layout>
 
 <script>
+	import { jsPDF } from "jspdf";
+
 	document.addEventListener("astro:page-load", () => {
 		const searchInput = document.getElementById("quote-search");
 		const stateFilter = document.getElementById("quote-state-filter");
@@ -442,6 +572,19 @@ const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.loc
 		const quoteResultsCount = document.getElementById("quote-results-count");
 		const quoteEmptyState = document.getElementById("quote-table-empty");
 		const quoteRows = Array.from(document.querySelectorAll("[data-quote-row]"));
+		const approveButtons = Array.from(document.querySelectorAll("[data-approve-quote]"));
+		const rejectButtons = Array.from(document.querySelectorAll("[data-reject-quote]"));
+		const markNewButtons = Array.from(document.querySelectorAll("[data-mark-new-quote]"));
+		const emailDraftPanel = document.getElementById("email-draft-panel");
+		const emailDraftClose = document.getElementById("email-draft-close");
+		const emailDraftCloseButton = document.getElementById("email-draft-close-button");
+		const emailDraftTo = document.getElementById("email-draft-to");
+		const emailDraftSubject = document.getElementById("email-draft-subject");
+		const emailDraftBody = document.getElementById("email-draft-body");
+		const emailDraftStatus = document.getElementById("email-draft-status");
+		const emailDraftCopy = document.getElementById("email-draft-copy");
+		const emailDraftOpenMailto = document.getElementById("email-draft-open-mailto");
+		const statusFilter = document.getElementById("quote-status-filter");
 
 		if (
 			!(
@@ -449,16 +592,34 @@ const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.loc
 				stateFilter instanceof HTMLSelectElement &&
 				payoutFilter instanceof HTMLSelectElement &&
 				quoteResultsCount instanceof HTMLElement &&
-				quoteEmptyState instanceof HTMLElement
+				quoteEmptyState instanceof HTMLElement &&
+				statusFilter instanceof HTMLSelectElement &&
+				emailDraftPanel instanceof HTMLElement &&
+				emailDraftClose instanceof HTMLElement &&
+				emailDraftCloseButton instanceof HTMLButtonElement &&
+				emailDraftTo instanceof HTMLElement &&
+				emailDraftSubject instanceof HTMLElement &&
+				emailDraftBody instanceof HTMLElement &&
+				emailDraftStatus instanceof HTMLElement &&
+				emailDraftCopy instanceof HTMLButtonElement &&
+				emailDraftOpenMailto instanceof HTMLAnchorElement
 			)
 		) {
 			return;
 		}
 
+		let currentEmailDraft = {
+			to: "",
+			subject: "",
+			body: "",
+			href: "",
+		};
+
 		const applyQuoteFilters = () => {
 			const searchValue = searchInput.value.trim().toLowerCase();
 			const selectedState = stateFilter.value;
 			const selectedPayout = payoutFilter.value;
+			const selectedStatus = statusFilter.value;
 			let visibleRows = 0;
 
 			for (const row of quoteRows) {
@@ -473,8 +634,9 @@ const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.loc
 					selectedPayout === "all" ||
 					(selectedPayout === "has-payout" && hasPayout) ||
 					(selectedPayout === "missing-payout" && !hasPayout);
+				const matchesStatus = selectedStatus === "all" || (row.dataset.status ?? "new") === selectedStatus;
 
-				const isVisible = matchesSearch && matchesState && matchesPayout;
+				const isVisible = matchesSearch && matchesState && matchesPayout && matchesStatus;
 				row.style.display = isVisible ? "" : "none";
 
 				if (isVisible) {
@@ -486,9 +648,318 @@ const sortedQuoteStates = Array.from(quoteStates).sort((left, right) => left.loc
 			quoteEmptyState.classList.toggle("hidden", visibleRows > 0);
 		};
 
+		const wrapText = (doc, text, x, y, maxWidth, lineHeight) => {
+			const lines = doc.splitTextToSize(text, maxWidth);
+			doc.text(lines, x, y);
+			return y + lines.length * lineHeight;
+		};
+
+		const showEmailDraftPanel = (draft) => {
+			currentEmailDraft = draft;
+			emailDraftTo.textContent = draft.to;
+			emailDraftSubject.textContent = draft.subject;
+			emailDraftBody.textContent = draft.body;
+			emailDraftOpenMailto.href = draft.href;
+			emailDraftStatus.textContent = "";
+			emailDraftPanel.classList.remove("hidden");
+			emailDraftPanel.classList.add("flex");
+			document.body.classList.add("overflow-hidden");
+		};
+
+		const closeEmailDraftPanel = () => {
+			emailDraftPanel.classList.add("hidden");
+			emailDraftPanel.classList.remove("flex");
+			emailDraftStatus.textContent = "";
+			document.body.classList.remove("overflow-hidden");
+		};
+
+		const setStatusBadgeClass = (badge, status) => {
+			badge.className = "inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]";
+			if (status === "approved") {
+				badge.classList.add("bg-emerald-100", "text-emerald-800");
+				return;
+			}
+			if (status === "rejected") {
+				badge.classList.add("bg-rose-100", "text-rose-800");
+				return;
+			}
+			badge.classList.add("bg-amber-100", "text-amber-800");
+		};
+
+		const updateQuoteRowStatus = (quoteId, status) => {
+			const row = quoteRows.find(
+				(candidate) => candidate instanceof HTMLElement && candidate.querySelector(`[data-quote-id="${quoteId}"]`)
+			);
+
+			if (!(row instanceof HTMLElement)) {
+				return;
+			}
+
+			row.dataset.status = status;
+			const badge = row.querySelector("[data-quote-status-badge]");
+			if (badge instanceof HTMLElement) {
+				badge.textContent = status;
+				setStatusBadgeClass(badge, status);
+			}
+
+			row.querySelectorAll("[data-current-status]").forEach((button) => {
+				if (button instanceof HTMLElement) {
+					button.dataset.currentStatus = status;
+				}
+			});
+
+			applyQuoteFilters();
+		};
+
+		const saveQuoteStatus = async (quoteId, status) => {
+			const response = await fetch("/api/admin-quote-status", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ id: quoteId, status }),
+			});
+
+			if (!response.ok) {
+				throw new Error("Could not update quote status.");
+			}
+		};
+
+		const buildApproveMailto = (button) => {
+			const customerEmail = button.dataset.customerEmail ?? "";
+			const customerName = button.dataset.customerName ?? "there";
+			const quoteId = button.dataset.quoteId?.slice(0, 8) ?? "";
+			const payout = button.dataset.estimatedPayout ?? "the approved amount";
+			const subject = `Your quote has been accepted - Invoice enclosed`;
+			const body = [
+				`Hi ${customerName},`,
+				"",
+				`Your quote has been accepted for ${payout}. Attached is your invoice.`,
+				"Please include this invoice in your shipment to prevent delay in your payout.",
+				"",
+				`Quote reference: #${quoteId}`,
+				"",
+				"Thank you,",
+				"I Buy Car Keys",
+			].join("\n");
+
+			return {
+				to: customerEmail,
+				subject,
+				body,
+				href: `mailto:${encodeURIComponent(customerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+			};
+		};
+
+		const buildRejectMailto = (button) => {
+			const customerEmail = button.dataset.customerEmail ?? "";
+			const customerName = button.dataset.customerName ?? "there";
+			const quoteId = button.dataset.quoteId?.slice(0, 8) ?? "";
+			const subject = "Update on your car key quote";
+			const body = [
+				`Hi ${customerName},`,
+				"",
+				`Thank you for sending your quote request. We are unable to accept this quote at this time.`,
+				"",
+				`Quote reference: #${quoteId}`,
+				"",
+				"If you would like us to take another look, reply with any updated details or photos.",
+				"",
+				"Thank you,",
+				"I Buy Car Keys",
+			].join("\n");
+
+			return {
+				to: customerEmail,
+				subject,
+				body,
+				href: `mailto:${encodeURIComponent(customerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+			};
+		};
+
+		const downloadInvoicePdf = (button) => {
+			const doc = new jsPDF({
+				unit: "pt",
+				format: "letter",
+			});
+			const quoteId = button.dataset.quoteId?.slice(0, 8) ?? "QUOTE";
+			const customerName = button.dataset.customerName ?? "";
+			const customerEmail = button.dataset.customerEmail ?? "";
+			const customerPhone = button.dataset.customerPhone ?? "";
+			const address = button.dataset.customerAddress ?? "";
+			const city = button.dataset.customerCity ?? "";
+			const state = button.dataset.customerState ?? "";
+			const zip = button.dataset.customerZip ?? "";
+			const totalKeys = button.dataset.totalKeys ?? "";
+			const estimatedPayout = button.dataset.estimatedPayout ?? "";
+			const createdAt = button.dataset.createdAt ?? "";
+			const quoteSummary = button.dataset.quoteSummary ?? "";
+			const submittedLabel = createdAt
+				? new Intl.DateTimeFormat("en-US", {
+						dateStyle: "medium",
+						timeStyle: "short",
+				  }).format(new Date(createdAt))
+				: "";
+
+			let y = 56;
+
+			doc.setFont("helvetica", "bold");
+			doc.setFontSize(22);
+			doc.text("I Buy Car Keys", 48, y);
+
+			doc.setFontSize(12);
+			doc.setFont("helvetica", "normal");
+			y += 24;
+			doc.text("Quote Approval Invoice", 48, y);
+
+			doc.setDrawColor(226, 232, 240);
+			y += 18;
+			doc.line(48, y, 564, y);
+
+			y += 28;
+			doc.setFont("helvetica", "bold");
+			doc.text("Invoice Details", 48, y);
+			doc.setFont("helvetica", "normal");
+			y += 18;
+			doc.text(`Quote reference: #${quoteId}`, 48, y);
+			y += 16;
+			doc.text(`Submitted: ${submittedLabel}`, 48, y);
+			y += 16;
+			doc.text(`Approved payout: ${estimatedPayout || "Pending review"}`, 48, y);
+			y += 16;
+			doc.text(`Total keys: ${totalKeys || "-"}`, 48, y);
+
+			y += 28;
+			doc.setFont("helvetica", "bold");
+			doc.text("Customer", 48, y);
+			doc.setFont("helvetica", "normal");
+			y += 18;
+			doc.text(customerName, 48, y);
+			y += 16;
+			doc.text(customerEmail, 48, y);
+			y += 16;
+			doc.text(customerPhone, 48, y);
+			y += 16;
+			doc.text(`${address}, ${city}, ${state} ${zip}`.replace(/\s+,/g, ","), 48, y);
+
+			y += 28;
+			doc.setFont("helvetica", "bold");
+			doc.text("Shipment Note", 48, y);
+			doc.setFont("helvetica", "normal");
+			y += 18;
+			y = wrapText(
+				doc,
+				"Please include this invoice in your shipment to prevent delay in your payout.",
+				48,
+				y,
+				516,
+				16
+			);
+
+			y += 16;
+			doc.setFont("helvetica", "bold");
+			doc.text("Quote Summary", 48, y);
+			doc.setFont("helvetica", "normal");
+			y += 18;
+			wrapText(doc, quoteSummary, 48, y, 516, 16);
+
+			doc.save(`ibuycarkeys-invoice-${quoteId}.pdf`);
+		};
+
+		const openMailtoDraft = (href) => {
+			const openedWindow = window.open(href, "_blank", "noopener,noreferrer");
+
+			if (openedWindow) {
+				return;
+			}
+
+			const mailLink = document.createElement("a");
+			mailLink.href = href;
+			mailLink.target = "_blank";
+			mailLink.rel = "noopener noreferrer";
+			mailLink.style.display = "none";
+			document.body.appendChild(mailLink);
+			mailLink.click();
+			mailLink.remove();
+		};
+
 		searchInput.addEventListener("input", applyQuoteFilters);
 		stateFilter.addEventListener("change", applyQuoteFilters);
 		payoutFilter.addEventListener("change", applyQuoteFilters);
+		statusFilter.addEventListener("change", applyQuoteFilters);
+
+		for (const button of approveButtons) {
+			if (!(button instanceof HTMLButtonElement)) {
+				continue;
+			}
+
+			button.addEventListener("click", async () => {
+				const quoteId = button.dataset.quoteId ?? "";
+				const draft = buildApproveMailto(button);
+				downloadInvoicePdf(button);
+				showEmailDraftPanel(draft);
+				try {
+					await saveQuoteStatus(quoteId, "approved");
+					updateQuoteRowStatus(quoteId, "approved");
+					emailDraftStatus.textContent = "Status updated to approved. Attach the downloaded invoice, then send the email when ready.";
+				} catch {
+					emailDraftStatus.textContent = "The invoice downloaded, but the status could not be updated.";
+				}
+			});
+		}
+
+		for (const button of rejectButtons) {
+			if (!(button instanceof HTMLButtonElement)) {
+				continue;
+			}
+
+			button.addEventListener("click", async () => {
+				const quoteId = button.dataset.quoteId ?? "";
+				const draft = buildRejectMailto(button);
+				showEmailDraftPanel(draft);
+				try {
+					await saveQuoteStatus(quoteId, "rejected");
+					updateQuoteRowStatus(quoteId, "rejected");
+					emailDraftStatus.textContent = "Status updated to rejected. Send the draft when ready.";
+				} catch {
+					emailDraftStatus.textContent = "The email draft is ready, but the status could not be updated.";
+				}
+			});
+		}
+
+		for (const button of markNewButtons) {
+			if (!(button instanceof HTMLButtonElement)) {
+				continue;
+			}
+
+			button.addEventListener("click", async () => {
+				const quoteId = button.dataset.quoteId ?? "";
+				try {
+					await saveQuoteStatus(quoteId, "new");
+					updateQuoteRowStatus(quoteId, "new");
+				} catch {
+					window.alert("Could not update this quote back to New.");
+				}
+			});
+		}
+
+		emailDraftClose.addEventListener("click", closeEmailDraftPanel);
+		emailDraftCloseButton.addEventListener("click", closeEmailDraftPanel);
+
+		emailDraftCopy.addEventListener("click", async () => {
+			const fullDraft = [`To: ${currentEmailDraft.to}`, `Subject: ${currentEmailDraft.subject}`, "", currentEmailDraft.body].join("\n");
+
+			try {
+				await navigator.clipboard.writeText(fullDraft);
+				emailDraftStatus.textContent = "Email draft copied to your clipboard.";
+			} catch {
+				emailDraftStatus.textContent = "Could not copy automatically. Select and copy the draft manually.";
+			}
+		});
+
+		emailDraftOpenMailto.addEventListener("click", (event) => {
+			event.preventDefault();
+			openMailtoDraft(currentEmailDraft.href);
+		});
+
 		applyQuoteFilters();
 	});
 </script>

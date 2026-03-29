@@ -186,11 +186,12 @@ import PriceCatalog from "../PriceCatalog.astro";
 							<div id="price-condition-group">
 								<label id="price-condition-label" for="price-condition">Condition</label>
 								<select id="price-condition" name="condition">
-									<option value="standard">Standard</option>
+									<option value="excellent">Excellent</option>
+									<option value="light-scratches">Light scratches</option>
 									<option value="worn">Worn</option>
 								</select>
 								<p id="price-condition-help" class="mt-2 text-sm text-gray-500">
-									Choose the condition that best matches your key.
+									Choose the condition that best matches the key you are sending in.
 								</p>
 							</div>
 
@@ -284,6 +285,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 								value={item.sku}
 								data-make={item.make}
 								data-description={item.description.toLowerCase()}
+								data-description-label={item.description}
 								data-price={item.price}
 								data-worn-price={item.wornPrice ?? ""}
 							>
@@ -463,6 +465,19 @@ import PriceCatalog from "../PriceCatalog.astro";
 			localStorage.setItem(storageKey, JSON.stringify(items));
 		};
 
+		const formatConditionLabel = (value) => {
+			switch (value) {
+				case "excellent":
+					return "Excellent";
+				case "light-scratches":
+					return "Light scratches";
+				case "worn":
+					return "Worn";
+				default:
+					return value;
+			}
+		};
+
 		const buildQuoteSubmission = (items) => {
 			const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 			const totalPayout = items.reduce((sum, item) => sum + item.lineTotal, 0);
@@ -472,7 +487,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 			});
 			const lines = items.map(
 				(item, index) =>
-					`${index + 1}. ${item.sku} - ${item.description} | ${item.condition} | ${item.quantity} key${
+					`${index + 1}. ${item.sku} - ${item.description} | ${formatConditionLabel(item.condition)} | ${item.quantity} key${
 						item.quantity === 1 ? "" : "s"
 					} @ ${currencyFormatter.format(item.unitPrice)} | Line total: ${currencyFormatter.format(item.lineTotal)}`
 			);
@@ -494,17 +509,12 @@ import PriceCatalog from "../PriceCatalog.astro";
 		};
 
 		const setConditionAvailability = (enabled) => {
-			conditionField.disabled = !enabled;
-
-			conditionGroup.classList.toggle("opacity-55", !enabled);
-			conditionLabel.classList.toggle("text-gray-400", !enabled);
+			conditionField.disabled = false;
+			conditionGroup.classList.toggle("opacity-55", false);
+			conditionLabel.classList.toggle("text-gray-400", false);
 			conditionHelp.textContent = enabled
-				? "Choose the condition that best matches your key."
-				: "Only one payout option is available for this key.";
-
-			if (!enabled) {
-				conditionField.value = "standard";
-			}
+				? "Choose the condition that best matches the key you are sending in."
+				: "Choose the condition that best matches the key you are sending in.";
 		};
 
 		const getSelectedOption = () => {
@@ -518,7 +528,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 		const getCurrentQuote = () => {
 			const selected = getSelectedOption();
 			const quantity = Number.parseInt(quantityField.value, 10) || 0;
-			const wantsWorn = conditionField.value === "worn";
+			const selectedCondition = conditionField.value;
 
 			if (!selected) {
 				return null;
@@ -527,15 +537,16 @@ import PriceCatalog from "../PriceCatalog.astro";
 			const standardPrice = Number(selected.dataset.price ?? "0");
 			const wornValue = selected.dataset.wornPrice;
 			const wornPrice = wornValue ? Number(wornValue) : null;
-			const unitPrice = wantsWorn && wornPrice !== null ? wornPrice : standardPrice;
-			const usedCondition = wantsWorn && wornPrice !== null ? "worn" : "standard";
+			const usesAdjustedPrice = selectedCondition === "light-scratches" || selectedCondition === "worn";
+			const unitPrice = usesAdjustedPrice && wornPrice !== null ? wornPrice : standardPrice;
+			const description = selected.dataset.descriptionLabel ?? selected.textContent?.split("|").slice(1).join("|").trim() ?? selected.value;
 
 			return {
 				sku: selected.value,
-				description: selected.textContent?.split("|").slice(1).join("|").trim() ?? selected.value,
+				description,
 				make: selected.dataset.make ?? "Unknown",
 				quantity,
-				condition: usedCondition,
+				condition: selectedCondition,
 				unitPrice,
 				lineTotal: unitPrice * quantity,
 				wornAvailable: wornPrice !== null,
@@ -554,16 +565,16 @@ import PriceCatalog from "../PriceCatalog.astro";
 				quotePreviewDetail.textContent = "Select a key from the catalog above to see your estimated payout.";
 				quotePreviewSku.textContent = "No key selected yet";
 				quotePreviewMake.textContent = "";
-				conditionHelp.textContent = "Choose the condition that best matches your key.";
+				conditionHelp.textContent = "Choose the condition that best matches the key you are sending in.";
 				return;
 			}
 
 			quotePreviewTotal.textContent = currencyFormatter.format(current.lineTotal);
 			quotePreviewSku.textContent = current.sku;
 			quotePreviewMake.textContent = `${current.make} key`;
-			quotePreviewDetail.textContent = `${current.quantity} x ${current.condition} price at ${currencyFormatter.format(
-				current.unitPrice
-			)} each`;
+			quotePreviewDetail.textContent = `${current.quantity} x ${formatConditionLabel(
+				current.condition
+			)} price at ${currencyFormatter.format(current.unitPrice)} each`;
 		};
 
 		const renderCart = () => {
@@ -585,7 +596,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 						<div>
 							<p class="font-semibold">${item.sku}</p>
 							<p class="mt-1 text-sm text-gray-300">${item.description}</p>
-							<p class="mt-1 text-sm text-gray-300">${item.condition} | ${item.quantity} key${item.quantity === 1 ? "" : "s"} at ${currencyFormatter.format(item.unitPrice)} each</p>
+							<p class="mt-1 text-sm text-gray-300">${formatConditionLabel(item.condition)} | ${item.quantity} key${item.quantity === 1 ? "" : "s"} at ${currencyFormatter.format(item.unitPrice)} each</p>
 						</div>
 						<div class="text-right">
 							<p class="font-semibold text-amber-300">${currencyFormatter.format(item.lineTotal)}</p>
@@ -636,24 +647,46 @@ import PriceCatalog from "../PriceCatalog.astro";
 				return;
 			}
 
-			const nextItems = [
-				...readCart(),
-				{
-					id: crypto.randomUUID(),
-					...current,
-					createdAt: new Date().toISOString(),
-				},
-			];
+			const existingItems = readCart();
+			const existingIndex = existingItems.findIndex(
+				(item) => item.sku === current.sku && item.condition === current.condition
+			);
+			let nextItems = existingItems;
+
+			if (existingIndex >= 0) {
+				nextItems = existingItems.map((item, index) =>
+					index === existingIndex
+						? {
+								...item,
+								quantity: item.quantity + current.quantity,
+								lineTotal: item.unitPrice * (item.quantity + current.quantity),
+						  }
+						: item
+				);
+			} else {
+				nextItems = [
+					...existingItems,
+					{
+						id: crypto.randomUUID(),
+						...current,
+						createdAt: new Date().toISOString(),
+					},
+				];
+			}
 
 			writeCart(nextItems);
 			renderCart();
 			quantityField.value = "1";
 			updatePreview();
-			showQuoteCartFeedback(`${current.sku} was added to your quote cart.`);
+			showQuoteCartFeedback(
+				existingIndex >= 0
+					? `${current.sku} was added to the existing cart line.`
+					: `${current.sku} was added to your quote cart.`
+			);
 		});
 
 		resetButton.addEventListener("click", () => {
-			conditionField.value = "standard";
+			conditionField.value = "excellent";
 			quantityField.value = "1";
 			updatePreview();
 		});
@@ -759,6 +792,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 		});
 
 		skuSelect.selectedIndex = -1;
+		conditionField.value = "excellent";
 		updatePreview();
 		renderCart();
 	});

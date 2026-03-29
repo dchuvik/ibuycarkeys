@@ -28,7 +28,7 @@ const groupedMakes: Record<string, string[]> = uniqueMakes.reduce(
 
 				<p class="-mb-16" slot="heading-content">
 					These are the common vehicle brands currently included in the quote builder. If a customer has a
-					different make, they can still choose "Other" in the form.
+					different make, they can still contact us directly for a manual quote review.
 				</p>
 			</Heading>
 		</Container>
@@ -46,7 +46,14 @@ const groupedMakes: Record<string, string[]> = uniqueMakes.reduce(
 									<h2 class="text-xl font-bold mt-4">{letter}</h2>
 									<ul>
 										{groupedMakes[letter].map((make) => (
-											<li>{make}</li>
+											<li>
+												<a
+													href={`/?make=${encodeURIComponent(make)}#price-catalog`}
+													class="text-gray-700 underline decoration-amber-300 underline-offset-4 transition hover:text-amber-700"
+												>
+													{make}
+												</a>
+											</li>
 										))}
 									</ul>
 								</li>

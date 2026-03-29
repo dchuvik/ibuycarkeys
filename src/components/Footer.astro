@@ -1,7 +1,6 @@
 ---
 import { siteName, siteSlogan } from "~/data/config";
 import { menuNavigation, menuMisc, menuService, menuLegal } from "~/data/menus";
-import NewsletterFooter from "./forms/NewsletterFooter.astro";
 import IconLogo from "~/assets/images/icons/logo.svg";
 const year = new Date().getFullYear();
 ---
@@ -107,18 +106,7 @@ const year = new Date().getFullYear();
 				</div>
 			</div>
 		</div>
-		<div
-			class="mt-16 border-t border-gray-800/10 pt-8 sm:mt-20 lg:mt-24 lg:flex lg:items-center lg:justify-between"
-		>
-			<div>
-				<span class="text-base font-semibold">Get payout updates</span>
-				<p class="mt-2 text-sm text-gray-600">
-					New quote rates, accepted key types, and buying updates sent to your inbox.
-				</p>
-			</div>
-			<NewsletterFooter />
-		</div>
-		<div class="mt-8 border-t border-gray-800/10 pt-8">
+		<div class="mt-16 border-t border-gray-800/10 pt-8 sm:mt-20 lg:mt-24">
 			<p class="text-sm/6 text-gray-600">
 				&copy; {year}
 				{siteName}. All rights reserved.

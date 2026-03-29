@@ -3,8 +3,8 @@ import { priceCatalog, priceCatalogMakes } from "~/data/priceCatalog";
 import KeyProductImage from "./KeyProductImage.astro";
 
 const {
-	title = "Searchable and filterable SKU catalog",
-	description = "Choose your make, search by SKU, FCC ID, or description, and select the key that matches what you have.",
+	title = "Browse the key catalog",
+	description = "Filter by make, search by SKU or FCC ID, and pick the key that matches what you have.",
 	scrollClass = "max-h-[70rem]",
 } = Astro.props;
 ---
@@ -27,6 +27,7 @@ const {
 			<label for="catalog-make">Make</label>
 			<select id="catalog-make">
 				<option value="">Select a make</option>
+				<option value="all">All makes</option>
 				{priceCatalogMakes.map((make) => <option value={make}>{make}</option>)}
 			</select>
 		</div>
@@ -44,6 +45,17 @@ const {
 		</div>
 	</div>
 
+	<div class="mt-4 grid grid-cols-1 gap-4 lg:max-w-[240px]">
+		<div>
+			<label for="catalog-sort">Sort by price</label>
+			<select id="catalog-sort">
+				<option value="featured">Featured order</option>
+				<option value="price-asc">Price: low to high</option>
+				<option value="price-desc">Price: high to low</option>
+			</select>
+		</div>
+	</div>
+
 	<div class:list={["mt-6 overflow-y-auto rounded-3xl border border-gray-200 bg-gray-50 p-3 pr-2", scrollClass]}>
 		<div id="catalog-card-grid" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
 			{
@@ -53,6 +65,7 @@ const {
 						data-make={item.make}
 						data-has-worn={item.wornPrice === null ? "false" : "true"}
 						data-search={`${item.sku} ${item.make} ${item.description}`.toLowerCase()}
+						data-price={item.price}
 					>
 						<KeyProductImage />
 						<div class="mt-4">
@@ -94,6 +107,7 @@ const {
 		const searchField = document.getElementById("catalog-search");
 		const makeField = document.getElementById("catalog-make");
 		const wornField = document.getElementById("catalog-worn");
+		const sortField = document.getElementById("catalog-sort");
 		const cardGrid = document.getElementById("catalog-card-grid");
 		const resultsCount = document.getElementById("catalog-results-count");
 
@@ -102,6 +116,7 @@ const {
 				searchField instanceof HTMLInputElement &&
 				makeField instanceof HTMLSelectElement &&
 				wornField instanceof HTMLSelectElement &&
+				sortField instanceof HTMLSelectElement &&
 				cardGrid instanceof HTMLElement &&
 				resultsCount instanceof HTMLElement
 			)
@@ -110,15 +125,38 @@ const {
 		}
 
 		const cards = Array.from(cardGrid.querySelectorAll("article"));
+		const url = new URL(window.location.href);
+		const makeParam = url.searchParams.get("make");
+		if (makeParam && Array.from(makeField.options).some((option) => option.value === makeParam)) {
+			makeField.value = makeParam;
+		}
+
+		const sortCards = () => {
+			const sortedCards = [...cards];
+			const sortValue = sortField.value;
+
+			if (sortValue === "price-asc" || sortValue === "price-desc") {
+				sortedCards.sort((left, right) => {
+					const leftPrice = Number(left.dataset.price ?? "0");
+					const rightPrice = Number(right.dataset.price ?? "0");
+					return sortValue === "price-asc" ? leftPrice - rightPrice : rightPrice - leftPrice;
+				});
+			}
+
+			sortedCards.forEach((card) => {
+				cardGrid.appendChild(card);
+			});
+		};
 
 		const applyFilters = () => {
 			const searchValue = searchField.value.trim().toLowerCase();
 			const makeValue = makeField.value;
 			const wornValue = wornField.value;
+			const showAllMakes = makeValue === "all";
+			const hasSelectedMake = makeValue.length > 0 && makeValue !== "all";
 			let visibleCount = 0;
 
 			cards.forEach((card) => {
-				const hasSelectedMake = makeValue.length > 0;
 				const hasSearch = searchValue.length > 0;
 				const matchesSearch = !hasSearch || (card.dataset.search ?? "").includes(searchValue);
 				const matchesMake = !hasSelectedMake || card.dataset.make === makeValue;
@@ -127,7 +165,7 @@ const {
 					wornValue === "all" ||
 					(wornValue === "has-worn" && hasWorn) ||
 					(wornValue === "no-worn" && !hasWorn);
-				const visible = (hasSelectedMake || hasSearch) && matchesSearch && matchesMake && matchesWorn;
+				const visible = (showAllMakes || hasSelectedMake || hasSearch) && matchesSearch && matchesMake && matchesWorn;
 
 				card.style.display = visible ? "" : "none";
 				if (visible) {
@@ -135,14 +173,21 @@ const {
 				}
 			});
 
+			sortCards();
+
 			if (hasSelectedMake) {
 				resultsCount.textContent = `${visibleCount} matching catalog item${visibleCount === 1 ? "" : "s"}`;
 				return;
 			}
 
+			if (showAllMakes) {
+				resultsCount.textContent = `${visibleCount} catalog item${visibleCount === 1 ? "" : "s"} across all makes`;
+				return;
+			}
+
 			resultsCount.textContent = searchValue
 				? `${visibleCount} matching catalog item${visibleCount === 1 ? "" : "s"} across all makes`
-				: "Choose a make or start typing to search all keys";
+				: "Choose a make or select All makes to browse the full catalog";
 		};
 
 		cardGrid.querySelectorAll("[data-select-sku]").forEach((button) => {
@@ -163,6 +208,7 @@ const {
 		searchField.addEventListener("input", applyFilters);
 		makeField.addEventListener("change", applyFilters);
 		wornField.addEventListener("change", applyFilters);
+		sortField.addEventListener("change", applyFilters);
 		applyFilters();
 	});
 </script>
