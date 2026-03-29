@@ -52,6 +52,7 @@ export const POST: APIRoute = async ({ request }) => {
 		submitted_at: new Date().toISOString(),
 		client_timezone: clientTimezone || null,
 		client_utc_offset_minutes: clientUtcOffsetMinutes ? Number.parseInt(clientUtcOffsetMinutes, 10) : null,
+		status: "new",
 	});
 
 	if (error) {

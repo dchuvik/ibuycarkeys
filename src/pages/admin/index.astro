@@ -24,6 +24,7 @@ type ContactMessage = {
 	created_at: string;
 	client_timezone: string | null;
 	client_utc_offset_minutes: number | null;
+	status: "new" | "replied" | null;
 };
 
 type QuoteRequest = {
@@ -120,6 +121,10 @@ const quoteStatusCounts = {
 	approved: quotes.filter((quote) => quote.status === "approved").length,
 	rejected: quotes.filter((quote) => quote.status === "rejected").length,
 };
+const contactStatusCounts = {
+	new: contacts.filter((contact) => (contact.status ?? "new") === "new").length,
+	replied: contacts.filter((contact) => contact.status === "replied").length,
+};
 ---
 
 <Layout
@@ -166,7 +171,11 @@ const quoteStatusCounts = {
 							</div>
 							<div>
 								<p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Message</p>
-								<pre id="email-draft-body" class="mt-2 overflow-x-auto whitespace-pre-wrap rounded-2xl bg-stone-50 px-4 py-4 text-sm leading-6 text-gray-800 ring-1 ring-gray-200"></pre>
+								<textarea
+									id="email-draft-body"
+									rows="10"
+									class="mt-2 min-h-56 w-full rounded-2xl bg-stone-50 px-4 py-4 text-sm leading-6 text-gray-800 ring-1 ring-gray-200"
+								></textarea>
 							</div>
 						</div>
 
@@ -276,41 +285,22 @@ const quoteStatusCounts = {
 								)
 							}
 
-							<div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
-								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
-									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Quote orders</p>
-									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">{quotes.length}</p>
-								</div>
-								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
-									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Contact messages</p>
-									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">{contacts.length}</p>
-								</div>
-								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
-									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">States covered</p>
-									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">{sortedQuoteStates.length}</p>
-								</div>
+							<div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
 								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
 									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">New orders</p>
-									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">
-										{quoteStatusCounts.new}
-									</p>
+									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">{quoteStatusCounts.new}</p>
 								</div>
-							</div>
-
-							<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
-									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Approved</p>
+									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">New messages</p>
+									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">{contactStatusCounts.new}</p>
+								</div>
+								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
+									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Approved quotes</p>
 									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-emerald-700">{quoteStatusCounts.approved}</p>
 								</div>
 								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
-									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Rejected</p>
+									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Rejected quotes</p>
 									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-rose-700">{quoteStatusCounts.rejected}</p>
-								</div>
-								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
-									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Orders with payout</p>
-									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">
-										{quotes.filter((quote) => Boolean(quote.estimated_payout)).length}
-									</p>
 								</div>
 							</div>
 
@@ -522,25 +512,77 @@ const quoteStatusCounts = {
 										<h2 class="mt-2 text-3xl font-bold text-gray-950">Contact messages</h2>
 									</div>
 									<p class="text-sm font-medium text-gray-500">
-										Recent messages: <span class="font-bold text-gray-950">{contacts.length}</span>
+										Visible messages: <span id="contact-results-count" class="font-bold text-gray-950">{contacts.length}</span>
 									</p>
+								</div>
+
+								<div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+									<div>
+										<label for="contact-search">Search messages</label>
+										<input id="contact-search" type="search" placeholder="Search name, email, phone, or message" />
+									</div>
+									<div>
+										<label for="contact-status-filter">Status</label>
+										<select id="contact-status-filter">
+											<option value="all">All statuses</option>
+											<option value="new">New</option>
+											<option value="replied">Replied</option>
+										</select>
+									</div>
 								</div>
 
 								<div class="mt-6 divide-y divide-gray-200 rounded-[1.5rem] border border-gray-200 bg-white">
 									{
 										contacts.length ? (
 											contacts.map((contact) => (
-												<article class="grid grid-cols-1 gap-5 px-5 py-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.75fr)_minmax(0,0.75fr)]">
+												<article
+													class="grid grid-cols-1 gap-5 px-5 py-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.75fr)_minmax(0,0.9fr)]"
+													data-contact-row
+													data-contact-id={contact.id}
+													data-status={contact.status ?? "new"}
+													data-search={`${contact.first_name} ${contact.last_name} ${contact.email} ${contact.phone_number ?? ""} ${contact.message}`.toLowerCase()}
+												>
 													<div>
 														<p class="text-lg font-bold text-gray-950">
 															{contact.first_name} {contact.last_name}
 														</p>
 														<p class="mt-1 text-sm font-medium text-amber-800">{contact.email}</p>
 														<p class="mt-1 text-sm text-gray-600">{contact.phone_number ?? "No phone provided"}</p>
+														<p
+															class={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${
+																(contact.status ?? "new") === "replied"
+																	? "bg-emerald-100 text-emerald-800"
+																	: "bg-amber-100 text-amber-800"
+															}`}
+															data-contact-status-badge
+														>
+															{contact.status ?? "new"}
+														</p>
 													</div>
 													<div>
 														<p class="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500">Message</p>
 														<p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-gray-700">{contact.message}</p>
+														<div class="mt-4 flex flex-col gap-3 sm:flex-row">
+															<button
+																type="button"
+																class="button button-black min-h-11 rounded-full px-5 text-sm"
+																data-reply-contact
+																data-contact-id={contact.id}
+																data-contact-name={`${contact.first_name} ${contact.last_name}`}
+																data-contact-email={contact.email}
+																data-contact-message={contact.message}
+															>
+																Reply
+															</button>
+															<button
+																type="button"
+																class="button button-yellow min-h-11 rounded-full px-5 text-sm"
+																data-mark-new-contact
+																data-contact-id={contact.id}
+															>
+																Mark New
+															</button>
+														</div>
 													</div>
 													<div class="text-sm text-gray-600">
 														<p class="font-semibold text-gray-950">{formatDateTime(contact.created_at)}</p>
@@ -553,6 +595,9 @@ const quoteStatusCounts = {
 										)
 									}
 								</div>
+								<p id="contact-table-empty" class="mt-4 hidden rounded-[1.5rem] border border-gray-200 bg-white px-5 py-8 text-center text-sm text-gray-500">
+									No contact messages match your current filters.
+								</p>
 							</div>
 						</div>
 					)
@@ -575,6 +620,9 @@ const quoteStatusCounts = {
 		const approveButtons = Array.from(document.querySelectorAll("[data-approve-quote]"));
 		const rejectButtons = Array.from(document.querySelectorAll("[data-reject-quote]"));
 		const markNewButtons = Array.from(document.querySelectorAll("[data-mark-new-quote]"));
+		const replyContactButtons = Array.from(document.querySelectorAll("[data-reply-contact]"));
+		const markNewContactButtons = Array.from(document.querySelectorAll("[data-mark-new-contact]"));
+		const contactRows = Array.from(document.querySelectorAll("[data-contact-row]"));
 		const emailDraftPanel = document.getElementById("email-draft-panel");
 		const emailDraftClose = document.getElementById("email-draft-close");
 		const emailDraftCloseButton = document.getElementById("email-draft-close-button");
@@ -585,6 +633,10 @@ const quoteStatusCounts = {
 		const emailDraftCopy = document.getElementById("email-draft-copy");
 		const emailDraftOpenMailto = document.getElementById("email-draft-open-mailto");
 		const statusFilter = document.getElementById("quote-status-filter");
+		const contactSearchInput = document.getElementById("contact-search");
+		const contactStatusFilter = document.getElementById("contact-status-filter");
+		const contactResultsCount = document.getElementById("contact-results-count");
+		const contactEmptyState = document.getElementById("contact-table-empty");
 
 		if (
 			!(
@@ -599,10 +651,14 @@ const quoteStatusCounts = {
 				emailDraftCloseButton instanceof HTMLButtonElement &&
 				emailDraftTo instanceof HTMLElement &&
 				emailDraftSubject instanceof HTMLElement &&
-				emailDraftBody instanceof HTMLElement &&
+				emailDraftBody instanceof HTMLTextAreaElement &&
 				emailDraftStatus instanceof HTMLElement &&
 				emailDraftCopy instanceof HTMLButtonElement &&
-				emailDraftOpenMailto instanceof HTMLAnchorElement
+				emailDraftOpenMailto instanceof HTMLAnchorElement &&
+				contactSearchInput instanceof HTMLInputElement &&
+				contactStatusFilter instanceof HTMLSelectElement &&
+				contactResultsCount instanceof HTMLElement &&
+				contactEmptyState instanceof HTMLElement
 			)
 		) {
 			return;
@@ -614,6 +670,9 @@ const quoteStatusCounts = {
 			body: "",
 			href: "",
 		};
+
+		statusFilter.value = "new";
+		contactStatusFilter.value = "new";
 
 		const applyQuoteFilters = () => {
 			const searchValue = searchInput.value.trim().toLowerCase();
@@ -648,6 +707,30 @@ const quoteStatusCounts = {
 			quoteEmptyState.classList.toggle("hidden", visibleRows > 0);
 		};
 
+		const applyContactFilters = () => {
+			const searchValue = contactSearchInput.value.trim().toLowerCase();
+			const selectedStatus = contactStatusFilter.value;
+			let visibleRows = 0;
+
+			for (const row of contactRows) {
+				if (!(row instanceof HTMLElement)) {
+					continue;
+				}
+
+				const matchesSearch = !searchValue || (row.dataset.search ?? "").includes(searchValue);
+				const matchesStatus = selectedStatus === "all" || (row.dataset.status ?? "new") === selectedStatus;
+				const isVisible = matchesSearch && matchesStatus;
+				row.style.display = isVisible ? "" : "none";
+
+				if (isVisible) {
+					visibleRows += 1;
+				}
+			}
+
+			contactResultsCount.textContent = String(visibleRows);
+			contactEmptyState.classList.toggle("hidden", visibleRows > 0);
+		};
+
 		const wrapText = (doc, text, x, y, maxWidth, lineHeight) => {
 			const lines = doc.splitTextToSize(text, maxWidth);
 			doc.text(lines, x, y);
@@ -658,7 +741,7 @@ const quoteStatusCounts = {
 			currentEmailDraft = draft;
 			emailDraftTo.textContent = draft.to;
 			emailDraftSubject.textContent = draft.subject;
-			emailDraftBody.textContent = draft.body;
+			emailDraftBody.value = draft.body;
 			emailDraftOpenMailto.href = draft.href;
 			emailDraftStatus.textContent = "";
 			emailDraftPanel.classList.remove("hidden");
@@ -723,6 +806,46 @@ const quoteStatusCounts = {
 			}
 		};
 
+		const setContactStatusBadgeClass = (badge, status) => {
+			badge.className = "mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]";
+			if (status === "replied") {
+				badge.classList.add("bg-emerald-100", "text-emerald-800");
+				return;
+			}
+			badge.classList.add("bg-amber-100", "text-amber-800");
+		};
+
+		const updateContactRowStatus = (contactId, status) => {
+			const row = contactRows.find(
+				(candidate) => candidate instanceof HTMLElement && candidate.dataset.contactId === contactId
+			);
+
+			if (!(row instanceof HTMLElement)) {
+				return;
+			}
+
+			row.dataset.status = status;
+			const badge = row.querySelector("[data-contact-status-badge]");
+			if (badge instanceof HTMLElement) {
+				badge.textContent = status;
+				setContactStatusBadgeClass(badge, status);
+			}
+
+			applyContactFilters();
+		};
+
+		const saveContactStatus = async (contactId, status) => {
+			const response = await fetch("/api/admin-contact-status", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ id: contactId, status }),
+			});
+
+			if (!response.ok) {
+				throw new Error("Could not update contact status.");
+			}
+		};
+
 		const buildApproveMailto = (button) => {
 			const customerEmail = button.dataset.customerEmail ?? "";
 			const customerName = button.dataset.customerName ?? "there";
@@ -765,6 +888,35 @@ const quoteStatusCounts = {
 				"",
 				"Thank you,",
 				"I Buy Car Keys",
+			].join("\n");
+
+			return {
+				to: customerEmail,
+				subject,
+				body,
+				href: `mailto:${encodeURIComponent(customerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+			};
+		};
+
+		const buildContactReplyMailto = (button) => {
+			const customerEmail = button.dataset.contactEmail ?? "";
+			const customerName = button.dataset.contactName ?? "there";
+			const originalMessage = button.dataset.contactMessage ?? "";
+			const subject = "Re: Your message to I Buy Car Keys";
+			const body = [
+				`Hi ${customerName},`,
+				"",
+				"Thank you for reaching out to I Buy Car Keys.",
+				"",
+				"[Add your response here]",
+				"",
+				"If helpful, you can reply directly to this email with any extra details or photos.",
+				"",
+				"Thank you,",
+				"I Buy Car Keys",
+				"",
+				"Original message:",
+				originalMessage,
 			].join("\n");
 
 			return {
@@ -885,6 +1037,8 @@ const quoteStatusCounts = {
 		stateFilter.addEventListener("change", applyQuoteFilters);
 		payoutFilter.addEventListener("change", applyQuoteFilters);
 		statusFilter.addEventListener("change", applyQuoteFilters);
+		contactSearchInput.addEventListener("input", applyContactFilters);
+		contactStatusFilter.addEventListener("change", applyContactFilters);
 
 		for (const button of approveButtons) {
 			if (!(button instanceof HTMLButtonElement)) {
@@ -945,6 +1099,8 @@ const quoteStatusCounts = {
 		emailDraftCloseButton.addEventListener("click", closeEmailDraftPanel);
 
 		emailDraftCopy.addEventListener("click", async () => {
+			currentEmailDraft.body = emailDraftBody.value;
+			currentEmailDraft.href = `mailto:${encodeURIComponent(currentEmailDraft.to)}?subject=${encodeURIComponent(currentEmailDraft.subject)}&body=${encodeURIComponent(currentEmailDraft.body)}`;
 			const fullDraft = [`To: ${currentEmailDraft.to}`, `Subject: ${currentEmailDraft.subject}`, "", currentEmailDraft.body].join("\n");
 
 			try {
@@ -957,9 +1113,46 @@ const quoteStatusCounts = {
 
 		emailDraftOpenMailto.addEventListener("click", (event) => {
 			event.preventDefault();
+			currentEmailDraft.body = emailDraftBody.value;
+			currentEmailDraft.href = `mailto:${encodeURIComponent(currentEmailDraft.to)}?subject=${encodeURIComponent(currentEmailDraft.subject)}&body=${encodeURIComponent(currentEmailDraft.body)}`;
 			openMailtoDraft(currentEmailDraft.href);
 		});
 
+		for (const button of replyContactButtons) {
+			if (!(button instanceof HTMLButtonElement)) {
+				continue;
+			}
+
+			button.addEventListener("click", async () => {
+				const contactId = button.dataset.contactId ?? "";
+				showEmailDraftPanel(buildContactReplyMailto(button));
+				try {
+					await saveContactStatus(contactId, "replied");
+					updateContactRowStatus(contactId, "replied");
+					emailDraftStatus.textContent = "Message marked as replied. Edit the draft as needed before sending.";
+				} catch {
+					emailDraftStatus.textContent = "Reply draft is ready, but the message status could not be updated.";
+				}
+			});
+		}
+
+		for (const button of markNewContactButtons) {
+			if (!(button instanceof HTMLButtonElement)) {
+				continue;
+			}
+
+			button.addEventListener("click", async () => {
+				const contactId = button.dataset.contactId ?? "";
+				try {
+					await saveContactStatus(contactId, "new");
+					updateContactRowStatus(contactId, "new");
+				} catch {
+					window.alert("Could not update this message back to New.");
+				}
+			});
+		}
+
 		applyQuoteFilters();
+		applyContactFilters();
 	});
 </script>
