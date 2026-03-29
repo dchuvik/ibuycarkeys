@@ -62,12 +62,23 @@ const allCars = await getMakeModelSet();
 			const makeSelect = document.getElementById("make")! as HTMLSelectElement;
 			const modelSelect = document.getElementById("model")! as HTMLSelectElement;
 
+			const resetModelOptions = () => {
+				modelSelect.replaceChildren();
+				const defaultOption = document.createElement("option");
+				defaultOption.value = "all";
+				defaultOption.textContent = "Choose model";
+				modelSelect.appendChild(defaultOption);
+			};
+
 			const populateModels = (selectedMake: string) => {
-				modelSelect.innerHTML = '<option value="all">Choose model</option>';
+				resetModelOptions();
 				allCars.forEach((car: { make: string; models: string[] }) => {
 					if (car.make === selectedMake) {
 						car.models.forEach((model) => {
-							modelSelect.innerHTML += `<option value="${model}">${model}</option>`;
+							const option = document.createElement("option");
+							option.value = model;
+							option.textContent = model;
+							modelSelect.appendChild(option);
 						});
 					}
 				});

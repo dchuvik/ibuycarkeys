@@ -191,6 +191,13 @@ const { data } = Astro.props;
 			const makeSelect = form.elements.namedItem("make") as HTMLSelectElement;
 			const modelSelect = form.elements.namedItem("model") as HTMLSelectElement;
 			const urlParams = new URLSearchParams(window.location.search);
+			const resetModelOptions = () => {
+				modelSelect.replaceChildren();
+				const defaultOption = document.createElement("option");
+				defaultOption.value = "all";
+				defaultOption.textContent = "All";
+				modelSelect.appendChild(defaultOption);
+			};
 
 			for (const [key, value] of urlParams.entries()) {
 				const input = form.elements.namedItem(key) as HTMLSelectElement;
@@ -212,7 +219,7 @@ const { data } = Astro.props;
 					const response = await fetch(url);
 					const models = await response.json();
 
-					modelSelect.innerHTML = '<option value="all">All</option>';
+					resetModelOptions();
 
 					models.forEach((model: string) => {
 						const option = document.createElement("option");
@@ -240,7 +247,7 @@ const { data } = Astro.props;
 				}
 
 				if (target.name === "make") {
-					modelSelect.innerHTML = '<option value="all">All</option>';
+					resetModelOptions();
 
 					if (target.value !== "all") {
 						try {
@@ -332,7 +339,7 @@ const { data } = Astro.props;
 
 						if (inputId === "make") {
 							if (modelSelect) {
-								modelSelect.innerHTML = '<option value="all">All</option>';
+								resetModelOptions();
 							}
 						}
 

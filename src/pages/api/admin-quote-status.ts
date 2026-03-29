@@ -46,14 +46,22 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 	}
 
 	const supabaseAdmin = getSupabaseAdmin();
-	const { error } = await supabaseAdmin
+	const { data, error } = await supabaseAdmin
 		.from(supabaseTables.quoteRequests)
 		.update({ status })
-		.eq("id", id);
+		.eq("id", id)
+		.select("id");
 
 	if (error) {
 		return new Response(JSON.stringify({ error: "Could not update quote status", ok: false }), {
 			status: 500,
+			headers: { "Content-Type": "application/json" },
+		});
+	}
+
+	if (!data?.length) {
+		return new Response(JSON.stringify({ error: "Quote not found", ok: false }), {
+			status: 404,
 			headers: { "Content-Type": "application/json" },
 		});
 	}
