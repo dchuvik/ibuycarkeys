@@ -1,6 +1,8 @@
 ---
-import { priceCatalog } from "~/data/priceCatalog";
+import { getPriceCatalog } from "~/data/priceCatalog";
 import PriceCatalog from "../PriceCatalog.astro";
+
+const priceCatalog = await getPriceCatalog();
 ---
 
 <section class="space-y-8">
@@ -37,6 +39,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 			<input type="hidden" name="source_page" id="quote-request-source-page" />
 			<input type="hidden" name="client_timezone" id="quote-request-client-timezone" />
 			<input type="hidden" name="client_utc_offset_minutes" id="quote-request-client-utc-offset" />
+			<input type="hidden" name="quote_items_json" id="quote-request-items-json" />
 
 			<div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
 				<div>
@@ -146,6 +149,16 @@ import PriceCatalog from "../PriceCatalog.astro";
 		</div>
 	</div>
 
+	<div
+		id="quote-cart-feedback-toast"
+		class="pointer-events-none fixed inset-x-4 bottom-4 z-50 hidden justify-center sm:inset-x-auto sm:right-6 sm:justify-end"
+	>
+		<div
+			id="quote-cart-feedback"
+			class="max-w-md rounded-2xl bg-gray-900 px-5 py-4 text-sm font-semibold text-white shadow-2xl ring-1 ring-gray-800/60"
+		></div>
+	</div>
+
 	<div class="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-gray-100 lg:p-8">
 		<div class="mb-6">
 			<p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Build your quote</p>
@@ -180,6 +193,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 							<p class="text-xs font-semibold uppercase tracking-[0.15em] text-gray-500">Selected key</p>
 							<p id="quote-preview-sku" class="mt-2 text-lg font-bold text-gray-900">No key selected yet</p>
 							<p id="quote-preview-make" class="mt-1 text-sm font-semibold text-amber-800"></p>
+							<p id="quote-preview-inventory" class="mt-2 text-sm text-gray-600"></p>
 						</div>
 
 						<div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -224,7 +238,6 @@ import PriceCatalog from "../PriceCatalog.astro";
 							</button>
 							<p class="text-sm text-gray-600">Select a key first, then choose the condition and quantity here.</p>
 						</div>
-						<p id="quote-cart-feedback" class="mt-3 text-sm font-medium text-emerald-700"></p>
 					</div>
 
 					<div class="rounded-3xl bg-gray-900 p-6 text-white shadow-xl">
@@ -287,7 +300,10 @@ import PriceCatalog from "../PriceCatalog.astro";
 								data-description={item.description.toLowerCase()}
 								data-description-label={item.description}
 								data-price={item.price}
+								data-light-scratches-price={item.lightScratchesPrice ?? ""}
 								data-worn-price={item.wornPrice ?? ""}
+								data-inventory-count={item.inventoryCount}
+								data-max-order-quantity={item.maxOrderQuantity}
 							>
 								{item.sku} | {item.description}
 							</option>
@@ -319,16 +335,18 @@ import PriceCatalog from "../PriceCatalog.astro";
 		const quotePreviewDetail = document.getElementById("quote-preview-detail");
 		const quotePreviewSku = document.getElementById("quote-preview-sku");
 		const quotePreviewMake = document.getElementById("quote-preview-make");
+		const quotePreviewInventory = document.getElementById("quote-preview-inventory");
 		const cartList = document.getElementById("quote-cart-items");
 		const cartEmpty = document.getElementById("quote-cart-empty");
 		const cartCount = document.getElementById("quote-cart-count");
 		const cartTotal = document.getElementById("quote-cart-total");
+		const quoteCartPanel = cartList.closest(".rounded-3xl.bg-gray-900");
 		const addMoreKeysButton = document.getElementById("add-more-keys");
 		const resetButton = document.getElementById("reset-key-form");
 		const sendQuoteCartButton = document.getElementById("send-quote-cart");
 		const sendQuoteStatus = document.getElementById("send-quote-status");
 		const clearCartButton = document.getElementById("clear-quote-cart");
-		const priceCatalog = document.getElementById("price-catalog");
+		const priceCatalogSection = document.getElementById("price-catalog");
 		const quoteRequestForm = document.getElementById("quote-request-form");
 		const quoteRequestName = document.getElementById("quote-request-name");
 		const quoteRequestEmail = document.getElementById("quote-request-email");
@@ -345,8 +363,10 @@ import PriceCatalog from "../PriceCatalog.astro";
 		const quoteRequestClientTimezone = document.getElementById("quote-request-client-timezone");
 		const quoteRequestClientUtcOffset = document.getElementById("quote-request-client-utc-offset");
 		const quoteRequestStatus = document.getElementById("quote-request-status");
+		const quoteRequestItemsJson = document.getElementById("quote-request-items-json");
 		const closeQuoteRequestButtons = Array.from(document.querySelectorAll("[data-close-quote-request]"));
 		const quoteCartFeedback = document.getElementById("quote-cart-feedback");
+		const quoteCartFeedbackToast = document.getElementById("quote-cart-feedback-toast");
 		const quoteSubmissionToast = document.getElementById("quote-submission-toast");
 		let quoteCartFeedbackTimer = 0;
 		let quoteSubmissionToastTimer = 0;
@@ -365,16 +385,18 @@ import PriceCatalog from "../PriceCatalog.astro";
 				quotePreviewDetail instanceof HTMLElement &&
 				quotePreviewSku instanceof HTMLElement &&
 				quotePreviewMake instanceof HTMLElement &&
+				quotePreviewInventory instanceof HTMLElement &&
 				cartList instanceof HTMLElement &&
 				cartEmpty instanceof HTMLElement &&
 				cartCount instanceof HTMLElement &&
 				cartTotal instanceof HTMLElement &&
+				quoteCartPanel instanceof HTMLElement &&
 				addMoreKeysButton instanceof HTMLButtonElement &&
 				resetButton instanceof HTMLButtonElement &&
 				sendQuoteCartButton instanceof HTMLButtonElement &&
 				sendQuoteStatus instanceof HTMLElement &&
 				clearCartButton instanceof HTMLButtonElement &&
-				priceCatalog instanceof HTMLElement &&
+				priceCatalogSection instanceof HTMLElement &&
 				quoteRequestForm instanceof HTMLFormElement &&
 				quoteRequestName instanceof HTMLInputElement &&
 				quoteRequestEmail instanceof HTMLInputElement &&
@@ -391,7 +413,9 @@ import PriceCatalog from "../PriceCatalog.astro";
 				quoteRequestClientTimezone instanceof HTMLInputElement &&
 				quoteRequestClientUtcOffset instanceof HTMLInputElement &&
 				quoteRequestStatus instanceof HTMLElement &&
+				quoteRequestItemsJson instanceof HTMLInputElement &&
 				quoteCartFeedback instanceof HTMLElement &&
+				quoteCartFeedbackToast instanceof HTMLElement &&
 				quoteSubmissionToast instanceof HTMLElement
 			)
 		) {
@@ -413,12 +437,16 @@ import PriceCatalog from "../PriceCatalog.astro";
 
 		const showQuoteCartFeedback = (message) => {
 			quoteCartFeedback.textContent = message;
+			quoteCartFeedbackToast.classList.remove("hidden");
+			quoteCartFeedbackToast.classList.add("flex");
 
 			if (quoteCartFeedbackTimer) {
 				window.clearTimeout(quoteCartFeedbackTimer);
 			}
 
 			quoteCartFeedbackTimer = window.setTimeout(() => {
+				quoteCartFeedbackToast.classList.add("hidden");
+				quoteCartFeedbackToast.classList.remove("flex");
 				quoteCartFeedback.textContent = "";
 			}, 3200);
 		};
@@ -435,6 +463,14 @@ import PriceCatalog from "../PriceCatalog.astro";
 				quoteSubmissionToast.classList.add("hidden");
 				quoteSubmissionToast.classList.remove("flex");
 			}, 4200);
+		};
+
+		const scrollToQuoteCartOnMobile = () => {
+			if (!window.matchMedia("(max-width: 1279px)").matches) {
+				return;
+			}
+
+			quoteCartPanel.scrollIntoView({ block: "start", behavior: "smooth" });
 		};
 
 		const sendNetlifyNotification = async (payload) => {
@@ -553,10 +589,16 @@ import PriceCatalog from "../PriceCatalog.astro";
 			}
 
 			const standardPrice = Number(selected.dataset.price ?? "0");
+			const lightScratchesValue = selected.dataset.lightScratchesPrice;
 			const wornValue = selected.dataset.wornPrice;
+			const lightScratchesPrice = lightScratchesValue ? Number(lightScratchesValue) : null;
 			const wornPrice = wornValue ? Number(wornValue) : null;
-			const usesAdjustedPrice = selectedCondition === "light-scratches" || selectedCondition === "worn";
-			const unitPrice = usesAdjustedPrice && wornPrice !== null ? wornPrice : standardPrice;
+			const unitPrice =
+				selectedCondition === "light-scratches"
+					? lightScratchesPrice ?? standardPrice
+					: selectedCondition === "worn"
+						? wornPrice ?? standardPrice
+						: standardPrice;
 			const description = selected.dataset.descriptionLabel ?? selected.textContent?.split("|").slice(1).join("|").trim() ?? selected.value;
 
 			return {
@@ -567,14 +609,18 @@ import PriceCatalog from "../PriceCatalog.astro";
 				condition: selectedCondition,
 				unitPrice,
 				lineTotal: unitPrice * quantity,
-				wornAvailable: wornPrice !== null,
+				hasConditionPrice: lightScratchesPrice !== null || wornPrice !== null,
+				inventoryCount: Number(selected.dataset.inventoryCount ?? "0"),
+				maxOrderQuantity: Number(selected.dataset.maxOrderQuantity ?? "0"),
 			};
 		};
+
+		const getRemainingCapacity = (quote) => Math.max(0, quote.maxOrderQuantity - quote.inventoryCount);
 
 		const updatePreview = () => {
 			const current = getCurrentQuote();
 			const selected = getSelectedOption();
-			const hasConditionOptions = Boolean(selected?.dataset.wornPrice);
+			const hasConditionOptions = Boolean(selected?.dataset.lightScratchesPrice || selected?.dataset.wornPrice);
 
 			setConditionAvailability(hasConditionOptions);
 
@@ -583,13 +629,27 @@ import PriceCatalog from "../PriceCatalog.astro";
 				quotePreviewDetail.textContent = "Select a key from the catalog above to see your estimated payout.";
 				quotePreviewSku.textContent = "No key selected yet";
 				quotePreviewMake.textContent = "";
+				quotePreviewInventory.textContent = "";
 				conditionHelp.textContent = "Choose the condition that best matches the key you are sending in.";
+				return;
+			}
+
+			const quantityLimit = getRemainingCapacity(current);
+			quantityField.max = String(quantityLimit || 0);
+
+			if (quantityLimit > 0 && current.quantity > quantityLimit) {
+				quantityField.value = String(quantityLimit);
+				updatePreview();
 				return;
 			}
 
 			quotePreviewTotal.textContent = currencyFormatter.format(current.lineTotal);
 			quotePreviewSku.textContent = current.sku;
 			quotePreviewMake.textContent = `${current.make} key`;
+			quotePreviewInventory.textContent =
+				quantityLimit > 0
+					? `${current.inventoryCount} on hand, accepting up to ${quantityLimit} more`
+					: "This key is not accepting more inventory right now";
 			quotePreviewDetail.textContent = `${current.quantity} x ${formatConditionLabel(
 				current.condition
 			)} price at ${currencyFormatter.format(current.unitPrice)} each`;
@@ -654,8 +714,9 @@ import PriceCatalog from "../PriceCatalog.astro";
 		conditionField.addEventListener("change", updatePreview);
 		quantityField.addEventListener("input", updatePreview);
 		document.addEventListener("key-catalog-select", (event) => {
-			const customEvent = event as CustomEvent<{ sku?: string }>;
+			const customEvent = event as CustomEvent<{ sku?: string; condition?: string }>;
 			const selectedSku = customEvent.detail?.sku;
+			const selectedCondition = customEvent.detail?.condition;
 			if (!selectedSku) {
 				return;
 			}
@@ -666,6 +727,9 @@ import PriceCatalog from "../PriceCatalog.astro";
 			}
 
 			skuSelect.value = selectedSku;
+			if (selectedCondition && Array.from(conditionField.options).some((option) => option.value === selectedCondition)) {
+				conditionField.value = selectedCondition;
+			}
 			skuSelect.dispatchEvent(new Event("change"));
 			currentLinePayout.scrollIntoView({ block: "start", behavior: "smooth" });
 		});
@@ -679,7 +743,29 @@ import PriceCatalog from "../PriceCatalog.astro";
 				return;
 			}
 
+			const quantityLimit = getRemainingCapacity(current);
 			const existingItems = readCart();
+			const existingSkuQuantity = existingItems
+				.filter((item) => item.sku === current.sku)
+				.reduce((sum, item) => sum + item.quantity, 0);
+			const remainingForCart = Math.max(0, quantityLimit - existingSkuQuantity);
+
+			if (quantityLimit < 1) {
+				showQuoteCartFeedback(`${current.sku} is not accepting more inventory right now.`);
+				return;
+			}
+
+			if (remainingForCart < 1) {
+				showQuoteCartFeedback(`You already added the current accepted limit for ${current.sku}.`);
+				return;
+			}
+
+			if (current.quantity > remainingForCart) {
+				quantityField.value = String(remainingForCart);
+				updatePreview();
+				showQuoteCartFeedback(`You can add up to ${remainingForCart} more of ${current.sku} right now.`);
+				return;
+			}
 			const existingIndex = existingItems.findIndex(
 				(item) => item.sku === current.sku && item.condition === current.condition
 			);
@@ -710,6 +796,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 			renderCart();
 			quantityField.value = "1";
 			updatePreview();
+			scrollToQuoteCartOnMobile();
 			showQuoteCartFeedback(
 				existingIndex >= 0
 					? `${current.sku} was added to the existing cart line.`
@@ -724,7 +811,7 @@ import PriceCatalog from "../PriceCatalog.astro";
 		});
 
 		addMoreKeysButton.addEventListener("click", () => {
-			priceCatalog.scrollIntoView({ block: "start", behavior: "smooth" });
+			priceCatalogSection.scrollIntoView({ block: "start", behavior: "smooth" });
 		});
 
 		clearCartButton.addEventListener("click", () => {
@@ -748,6 +835,17 @@ import PriceCatalog from "../PriceCatalog.astro";
 			quoteRequestSourcePage.value = window.location.href;
 			quoteRequestClientTimezone.value = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
 			quoteRequestClientUtcOffset.value = String(new Date().getTimezoneOffset() * -1);
+			quoteRequestItemsJson.value = JSON.stringify(
+				items.map((item) => ({
+					sku: item.sku,
+					make: item.make,
+					description: item.description,
+					condition: item.condition,
+					quantity: item.quantity,
+					unitPrice: item.unitPrice,
+					lineTotal: item.lineTotal,
+				}))
+			);
 			quoteRequestStatus.textContent = "";
 			sendQuoteStatus.textContent = "";
 			openQuoteRequest();

@@ -46,6 +46,94 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 	}
 
 	const supabaseAdmin = getSupabaseAdmin();
+	const {
+		data: currentQuote,
+		error: currentQuoteError,
+	} = await supabaseAdmin
+		.from(supabaseTables.quoteRequests)
+		.select("id, status")
+		.eq("id", id)
+		.maybeSingle();
+
+	if (currentQuoteError) {
+		return new Response(JSON.stringify({ error: "Could not load quote", ok: false }), {
+			status: 500,
+			headers: { "Content-Type": "application/json" },
+		});
+	}
+
+	if (!currentQuote) {
+		return new Response(JSON.stringify({ error: "Quote not found", ok: false }), {
+			status: 404,
+			headers: { "Content-Type": "application/json" },
+		});
+	}
+
+	const previousStatus = currentQuote.status ?? "new";
+	const inventoryDelta = (status === "approved" ? 1 : 0) - (previousStatus === "approved" ? 1 : 0);
+
+	if (inventoryDelta !== 0) {
+		const { data: quoteItemsData, error: quoteItemsError } = await supabaseAdmin
+			.from(supabaseTables.quoteRequestItems)
+			.select("sku, quantity")
+			.eq("quote_request_id", id);
+
+		if (quoteItemsError) {
+			return new Response(JSON.stringify({ error: "Could not load quote items", ok: false }), {
+				status: 500,
+				headers: { "Content-Type": "application/json" },
+			});
+		}
+
+		const quoteItems = (quoteItemsData ?? []).map((item) => ({
+			sku: String(item.sku ?? ""),
+			quantity: Number(item.quantity ?? 0),
+		}));
+
+		if (quoteItems.length) {
+			const { data: catalogRows, error: catalogError } = await supabaseAdmin
+				.from("key_catalog_items")
+				.select("sku, inventory_count")
+				.in(
+					"sku",
+					quoteItems.map((item) => item.sku)
+				);
+
+			if (catalogError) {
+				return new Response(JSON.stringify({ error: "Could not update catalog inventory", ok: false }), {
+					status: 500,
+					headers: { "Content-Type": "application/json" },
+				});
+			}
+
+			const inventoryBySku = new Map(
+				(catalogRows ?? []).map((row) => [String(row.sku), Number(row.inventory_count ?? 0)])
+			);
+
+			for (const item of quoteItems) {
+				if (!inventoryBySku.has(item.sku)) {
+					continue;
+				}
+
+				const nextInventory = Math.max(0, (inventoryBySku.get(item.sku) ?? 0) + item.quantity * inventoryDelta);
+				const { error: inventoryUpdateError } = await supabaseAdmin
+					.from("key_catalog_items")
+					.update({
+						inventory_count: nextInventory,
+						updated_at: new Date().toISOString(),
+					})
+					.eq("sku", item.sku);
+
+				if (inventoryUpdateError) {
+					return new Response(JSON.stringify({ error: "Could not update catalog inventory", ok: false }), {
+						status: 500,
+						headers: { "Content-Type": "application/json" },
+					});
+				}
+			}
+		}
+	}
+
 	const { data, error } = await supabaseAdmin
 		.from(supabaseTables.quoteRequests)
 		.update({ status })

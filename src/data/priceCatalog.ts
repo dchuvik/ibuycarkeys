@@ -1,9 +1,15 @@
+import { getSupabaseAdmin, isSupabaseAdminConfigured } from "~/lib/supabaseAdmin";
+
 export interface PriceCatalogItem {
 	sku: string;
 	description: string;
 	price: number;
+	lightScratchesPrice: number | null;
 	wornPrice: number | null;
 	make: string;
+	inventoryCount: number;
+	maxOrderQuantity: number;
+	active: boolean;
 }
 
 const makeByPrefix: Record<string, string> = {
@@ -45,7 +51,7 @@ const makeByPrefix: Record<string, string> = {
 	VVO: "Volvo",
 };
 
-const rawPriceCatalog = `
+export const rawPriceCatalog = `
 ACU.1/ACU.1W|Acura Smart Key FCC ID: ACJ8D8E24A04|40|20
 ACU.2|Acura Smart Key - Style 1 - Any Button Configuration|40|
 ACU.3/ACU.3W|Acura Smart Key - Style 2 - Any Button Configuration|15|3
@@ -355,22 +361,80 @@ VVO.2|Volvo Smart Key 6 Button|3|
 VVO.3/VVO.3W|Volvo Smart Key - Style 2 - Any Color|10|1
 `;
 
-export const priceCatalog: PriceCatalogItem[] = rawPriceCatalog
-	.trim()
-	.split("\n")
-	.map((line) => {
-		const [sku, description, price, wornPrice] = line.split("|");
-		const prefix = sku.split(".")[0];
+export const parseDefaultPriceCatalog = () =>
+	rawPriceCatalog
+		.trim()
+		.split("\n")
+		.map((line) => {
+			const [sku, description, price, conditionPrice] = line.split("|");
+			const prefix = sku.split(".")[0];
 
-		return {
-			sku,
-			description,
-			price: Number(price),
-			wornPrice: wornPrice ? Number(wornPrice) : null,
-			make: makeByPrefix[prefix] ?? description.split(" ")[0],
-		};
-	});
+			return {
+				sku,
+				description,
+				price: Number(price),
+				lightScratchesPrice: conditionPrice ? Number(conditionPrice) : null,
+				wornPrice: conditionPrice ? Number(conditionPrice) : null,
+				make: makeByPrefix[prefix] ?? description.split(" ")[0],
+				inventoryCount: 0,
+				maxOrderQuantity: 25,
+				active: true,
+			} satisfies PriceCatalogItem;
+		});
 
-export const priceCatalogMakes = [...new Set(priceCatalog.map((item) => item.make))].sort((a, b) =>
+export const defaultPriceCatalog = parseDefaultPriceCatalog();
+
+export const defaultPriceCatalogMakes = [...new Set(defaultPriceCatalog.map((item) => item.make))].sort((a, b) =>
 	a.localeCompare(b)
 );
+
+const mapSupabaseCatalogRow = (item: Record<string, unknown>): PriceCatalogItem => ({
+	sku: String(item.sku ?? ""),
+	description: String(item.description ?? ""),
+	price: Number(item.excellent_price ?? 0),
+	lightScratchesPrice:
+		item.light_scratches_price === null || item.light_scratches_price === undefined
+			? item.adjusted_price === null || item.adjusted_price === undefined
+				? null
+				: Number(item.adjusted_price)
+			: Number(item.light_scratches_price),
+	wornPrice:
+		item.worn_price === null || item.worn_price === undefined
+			? item.adjusted_price === null || item.adjusted_price === undefined
+				? null
+				: Number(item.adjusted_price)
+			: Number(item.worn_price),
+	make: String(item.make ?? ""),
+	inventoryCount: Number(item.inventory_count ?? 0),
+	maxOrderQuantity: Number(item.max_order_quantity ?? 0),
+	active: Boolean(item.active),
+});
+
+export const getPriceCatalog = async () => {
+	if (!isSupabaseAdminConfigured()) {
+		return defaultPriceCatalog;
+	}
+
+	try {
+		const supabaseAdmin = getSupabaseAdmin();
+		const { data, error } = await supabaseAdmin
+			.from("key_catalog_items")
+			.select("*")
+			.eq("active", true)
+			.order("make", { ascending: true })
+			.order("sku", { ascending: true });
+
+		if (error || !data?.length) {
+			return defaultPriceCatalog;
+		}
+
+		return data.map((item) => mapSupabaseCatalogRow(item));
+	} catch {
+		return defaultPriceCatalog;
+	}
+};
+
+export const getPriceCatalogMakes = async () => {
+	const items = await getPriceCatalog();
+	return [...new Set(items.map((item) => item.make))].sort((a, b) => a.localeCompare(b));
+};
