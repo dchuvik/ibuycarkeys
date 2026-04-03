@@ -10,10 +10,10 @@ const priceCatalog = await getPriceCatalog();
 		id="quote-request-form"
 		name="quote-cart"
 		method="POST"
-		class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-950/70 p-4"
+		class="fixed inset-0 z-50 hidden items-start justify-center overflow-y-auto bg-gray-950/70 px-4 py-4 sm:items-center sm:p-4"
 	>
 		<div class="absolute inset-0" data-close-quote-request></div>
-		<div class="relative z-10 w-full max-w-2xl max-h-[84vh] overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl ring-1 ring-gray-200">
+		<div class="relative z-10 my-auto w-full max-w-2xl max-h-[84vh] overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl ring-1 ring-gray-200">
 			<div class="flex items-start justify-between gap-4">
 				<div>
 					<p class="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">Submit your quote</p>
