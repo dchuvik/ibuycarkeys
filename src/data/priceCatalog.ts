@@ -6,6 +6,7 @@ export interface PriceCatalogItem {
 	price: number;
 	lightScratchesPrice: number | null;
 	wornPrice: number | null;
+	imageUrl: string | null;
 	make: string;
 	inventoryCount: number;
 	maxOrderQuantity: number;
@@ -375,6 +376,7 @@ export const parseDefaultPriceCatalog = () =>
 				price: Number(price),
 				lightScratchesPrice: conditionPrice ? Number(conditionPrice) : null,
 				wornPrice: conditionPrice ? Number(conditionPrice) : null,
+				imageUrl: null,
 				make: makeByPrefix[prefix] ?? description.split(" ")[0],
 				inventoryCount: 0,
 				maxOrderQuantity: 25,
@@ -404,6 +406,7 @@ const mapSupabaseCatalogRow = (item: Record<string, unknown>): PriceCatalogItem 
 				? null
 				: Number(item.adjusted_price)
 			: Number(item.worn_price),
+	imageUrl: item.image_url === null || item.image_url === undefined ? null : String(item.image_url),
 	make: String(item.make ?? ""),
 	inventoryCount: Number(item.inventory_count ?? 0),
 	maxOrderQuantity: Number(item.max_order_quantity ?? 0),

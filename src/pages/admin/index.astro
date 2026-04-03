@@ -56,6 +56,7 @@ type KeyCatalogItem = {
 	adjusted_price: number | null;
 	light_scratches_price: number | null;
 	worn_price: number | null;
+	image_url: string | null;
 	inventory_count: number;
 	max_order_quantity: number;
 	active: boolean;
@@ -222,6 +223,108 @@ const seedCatalogCount = defaultPriceCatalog.length;
 					</div>
 				</div>
 
+				<div
+					id="new-key-panel"
+					class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-950/70 p-4"
+				>
+					<div id="new-key-close" class="absolute inset-0"></div>
+					<div class="relative z-10 w-full max-w-5xl max-h-[88vh] overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl ring-1 ring-gray-200">
+						<div class="flex items-start justify-between gap-4">
+							<div>
+								<p class="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700">Catalog admin</p>
+								<h2 class="mt-2 text-2xl font-bold text-gray-950">Add new key</h2>
+								<p class="mt-2 text-sm leading-6 text-gray-600">
+									Create a new catalog item with pricing, inventory details, and an uploaded image.
+								</p>
+							</div>
+							<button
+								type="button"
+								id="new-key-close-button"
+								class="inline-flex size-11 items-center justify-center rounded-full border border-gray-200 text-xl leading-none text-gray-500 transition hover:border-gray-300 hover:text-gray-700"
+								aria-label="Close new key form"
+							>
+								&times;
+							</button>
+						</div>
+
+						<form
+							id="new-key-catalog-form"
+							class="mt-6 grid grid-cols-1 gap-4 rounded-[1.5rem] border border-dashed border-amber-300 bg-amber-50/60 p-5 shadow-sm xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_120px_120px_120px_110px_120px]"
+						>
+							<div class="xl:col-span-2">
+								<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+									<div>
+										<label for="new-key-sku">SKU</label>
+										<input id="new-key-sku" name="sku" type="text" placeholder="TOY.31" required />
+									</div>
+									<div>
+										<label for="new-key-make">Make</label>
+										<input id="new-key-make" name="make" type="text" placeholder="Toyota" required />
+									</div>
+								</div>
+								<div class="mt-4">
+									<label for="new-key-description">Description</label>
+									<textarea
+										id="new-key-description"
+										name="description"
+										rows="3"
+										class="min-h-28"
+										placeholder="Toyota Smart Key FCC ID..."
+										required
+									></textarea>
+								</div>
+								<div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+									<div>
+										<label for="new-key-image-file">Key image</label>
+										<input id="new-key-image-file" name="imageFile" type="file" accept="image/*" />
+									</div>
+									<div>
+										<label for="new-key-image-url">Or image URL</label>
+										<input id="new-key-image-url" name="imageUrl" type="url" placeholder="https://..." />
+									</div>
+								</div>
+							</div>
+							<div>
+								<label for="new-key-excellent-price">Excellent</label>
+								<div class="relative">
+									<span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm font-semibold text-gray-500">$</span>
+									<input id="new-key-excellent-price" name="excellentPrice" type="number" min="0" step="0.01" value="0" class="pl-7" required />
+								</div>
+							</div>
+							<div>
+								<label for="new-key-light-scratches-price">Light scratches</label>
+								<div class="relative">
+									<span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm font-semibold text-gray-500">$</span>
+									<input id="new-key-light-scratches-price" name="lightScratchesPrice" type="number" min="0" step="0.01" class="pl-7" />
+								</div>
+							</div>
+							<div>
+								<label for="new-key-worn-price">Worn</label>
+								<div class="relative">
+									<span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm font-semibold text-gray-500">$</span>
+									<input id="new-key-worn-price" name="wornPrice" type="number" min="0" step="0.01" class="pl-7" />
+								</div>
+							</div>
+							<div>
+								<label for="new-key-inventory-count">On hand</label>
+								<input id="new-key-inventory-count" name="inventoryCount" type="number" min="0" step="1" value="0" />
+							</div>
+							<div>
+								<label for="new-key-max-order">Max on hand</label>
+								<input id="new-key-max-order" name="maxOrderQuantity" type="number" min="0" step="1" value="25" />
+							</div>
+							<div class="flex flex-col justify-between gap-3">
+								<label class="flex items-center gap-2 pt-7 text-sm font-medium text-gray-700">
+									<input name="active" type="checkbox" checked />
+									<span>Active</span>
+								</label>
+								<input type="hidden" name="action" value="create" />
+								<button type="submit" class="button button-black min-h-11 rounded-full px-4 text-sm">Add key</button>
+							</div>
+						</form>
+					</div>
+				</div>
+
 				<div class="flex flex-col gap-4 rounded-[2rem] bg-gray-950 px-6 py-8 text-white shadow-2xl sm:px-8">
 					<p class="text-sm font-semibold uppercase tracking-[0.22em] text-amber-300">Internal dashboard</p>
 					<h1 class="text-4xl font-bold tracking-[-0.03em]">Submission admin</h1>
@@ -284,7 +387,7 @@ const seedCatalogCount = defaultPriceCatalog.length;
 							</form>
 						</div>
 					) : (
-						<div class="space-y-8">
+						<div class="flex flex-col gap-8">
 							<div class="flex flex-col gap-4 rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200 sm:flex-row sm:items-center sm:justify-between">
 								<div>
 									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-amber-700">Live data</p>
@@ -527,7 +630,7 @@ const seedCatalogCount = defaultPriceCatalog.length;
 								</div>
 							</div>
 
-							<details class="group rounded-[2rem] bg-white p-6 shadow-xl ring-1 ring-gray-200">
+							<details class="order-3 group rounded-[2rem] bg-white p-6 shadow-xl ring-1 ring-gray-200">
 								<summary class="flex cursor-pointer list-none items-center justify-between gap-4">
 									<div>
 										<p class="text-sm font-semibold uppercase tracking-[0.16em] text-amber-700">Catalog admin</p>
@@ -548,7 +651,7 @@ const seedCatalogCount = defaultPriceCatalog.length;
 
 								<div class="mt-6 space-y-6">
 									<div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
-										If the database catalog is empty, seed it once from the existing built-in list of {seedCatalogCount} keys.
+										You can seed the original {seedCatalogCount} built-in keys once, then add new keys and upload an image for each catalog item here.
 									</div>
 
 									<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -570,6 +673,9 @@ const seedCatalogCount = defaultPriceCatalog.length;
 											</div>
 										</div>
 										<div class="flex flex-col gap-3 sm:flex-row">
+											<button type="button" id="open-new-key-panel" class="button button-black min-h-11 rounded-full px-5 text-sm">
+												Add New Key
+											</button>
 											<button type="button" id="seed-key-catalog" class="button button-yellow min-h-11 rounded-full px-5 text-sm">
 												Seed Catalog
 											</button>
@@ -582,7 +688,7 @@ const seedCatalogCount = defaultPriceCatalog.length;
 											keyCatalogItems.length ? (
 												keyCatalogItems.map((item) => (
 													<form
-														class="grid grid-cols-1 gap-4 rounded-[1.5rem] border border-gray-200 bg-white p-4 shadow-sm xl:grid-cols-[minmax(0,1.45fr)_110px_130px_110px_140px_120px_110px]"
+														class="grid grid-cols-1 gap-4 rounded-[1.5rem] border border-gray-200 bg-white p-4 shadow-sm xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_110px_130px_110px_120px_120px_110px]"
 														data-key-catalog-form
 														data-search={`${item.sku} ${item.make} ${item.description}`.toLowerCase()}
 														data-make={item.make}
@@ -592,6 +698,26 @@ const seedCatalogCount = defaultPriceCatalog.length;
 															<p class="mt-1 text-sm font-medium text-amber-800">{item.make}</p>
 															<p class="mt-2 text-sm leading-6 text-gray-600">{item.description}</p>
 															<input type="hidden" name="sku" value={item.sku} />
+															<input type="hidden" name="currentImageUrl" value={item.image_url ?? ""} />
+															<input type="hidden" name="action" value="update" />
+														</div>
+														<div class="space-y-3">
+															<div class="overflow-hidden rounded-2xl border border-gray-200 bg-stone-50 p-3">
+																<img
+																	src={item.image_url ?? "/favicon.svg"}
+																	alt={`${item.sku} key image`}
+																	class="aspect-[4/3] w-full rounded-xl object-contain"
+																	loading="lazy"
+																/>
+															</div>
+															<div>
+																<label for={`image-file-${item.sku}`}>Replace image</label>
+																<input id={`image-file-${item.sku}`} name="imageFile" type="file" accept="image/*" />
+															</div>
+															<div>
+																<label for={`image-url-${item.sku}`}>Image URL</label>
+																<input id={`image-url-${item.sku}`} name="imageUrl" type="url" value={item.image_url ?? ""} placeholder="https://..." />
+															</div>
 														</div>
 														<div>
 															<label for={`excellent-price-${item.sku}`}>Excellent</label>
@@ -645,7 +771,7 @@ const seedCatalogCount = defaultPriceCatalog.length;
 								</div>
 							</details>
 
-							<div class="rounded-[2rem] bg-white p-6 shadow-xl ring-1 ring-gray-200">
+							<div class="order-2 rounded-[2rem] bg-white p-6 shadow-xl ring-1 ring-gray-200">
 								<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 									<div>
 										<p class="text-sm font-semibold uppercase tracking-[0.16em] text-amber-700">Contact form</p>
@@ -772,6 +898,10 @@ const seedCatalogCount = defaultPriceCatalog.length;
 		const emailDraftStatus = document.getElementById("email-draft-status");
 		const emailDraftCopy = document.getElementById("email-draft-copy");
 		const emailDraftOpenMailto = document.getElementById("email-draft-open-mailto");
+		const newKeyPanel = document.getElementById("new-key-panel");
+		const newKeyClose = document.getElementById("new-key-close");
+		const newKeyCloseButton = document.getElementById("new-key-close-button");
+		const openNewKeyPanelButton = document.getElementById("open-new-key-panel");
 		const statusFilter = document.getElementById("quote-status-filter");
 		const contactSearchInput = document.getElementById("contact-search");
 		const contactStatusFilter = document.getElementById("contact-status-filter");
@@ -782,6 +912,7 @@ const seedCatalogCount = defaultPriceCatalog.length;
 		const catalogResultsCount = document.getElementById("catalog-results-count");
 		const catalogEmptyState = document.getElementById("catalog-table-empty");
 		const catalogStatus = document.getElementById("key-catalog-status");
+		const newKeyCatalogForm = document.getElementById("new-key-catalog-form");
 		const seedKeyCatalogButton = document.getElementById("seed-key-catalog");
 		const keyCatalogForms = Array.from(document.querySelectorAll("[data-key-catalog-form]"));
 
@@ -802,6 +933,10 @@ const seedCatalogCount = defaultPriceCatalog.length;
 				emailDraftStatus instanceof HTMLElement &&
 				emailDraftCopy instanceof HTMLButtonElement &&
 				emailDraftOpenMailto instanceof HTMLAnchorElement &&
+				newKeyPanel instanceof HTMLElement &&
+				newKeyClose instanceof HTMLElement &&
+				newKeyCloseButton instanceof HTMLButtonElement &&
+				openNewKeyPanelButton instanceof HTMLButtonElement &&
 				contactSearchInput instanceof HTMLInputElement &&
 				contactStatusFilter instanceof HTMLSelectElement &&
 				contactResultsCount instanceof HTMLElement &&
@@ -811,6 +946,7 @@ const seedCatalogCount = defaultPriceCatalog.length;
 				catalogResultsCount instanceof HTMLElement &&
 				catalogEmptyState instanceof HTMLElement &&
 				catalogStatus instanceof HTMLElement &&
+				newKeyCatalogForm instanceof HTMLFormElement &&
 				seedKeyCatalogButton instanceof HTMLButtonElement
 			)
 		) {
@@ -933,6 +1069,18 @@ const seedCatalogCount = defaultPriceCatalog.length;
 			document.body.classList.remove("overflow-hidden");
 		};
 
+		const openNewKeyPanel = () => {
+			newKeyPanel.classList.remove("hidden");
+			newKeyPanel.classList.add("flex");
+			document.body.classList.add("overflow-hidden");
+		};
+
+		const closeNewKeyPanel = () => {
+			newKeyPanel.classList.add("hidden");
+			newKeyPanel.classList.remove("flex");
+			document.body.classList.remove("overflow-hidden");
+		};
+
 		const setStatusBadgeClass = (badge, status) => {
 			badge.className = "inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]";
 			if (status === "approved") {
@@ -1027,17 +1175,7 @@ const seedCatalogCount = defaultPriceCatalog.length;
 			const formData = new FormData(form);
 			const response = await fetch("/api/admin-key-catalog", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						action: "update",
-						sku: String(formData.get("sku") ?? ""),
-						excellentPrice: String(formData.get("excellentPrice") ?? ""),
-						lightScratchesPrice: String(formData.get("lightScratchesPrice") ?? ""),
-						wornPrice: String(formData.get("wornPrice") ?? ""),
-						inventoryCount: String(formData.get("inventoryCount") ?? ""),
-						maxOrderQuantity: String(formData.get("maxOrderQuantity") ?? ""),
-						active: formData.get("active") === "on",
-				}),
+				body: formData,
 			});
 
 			if (!response.ok) {
@@ -1310,6 +1448,9 @@ const seedCatalogCount = defaultPriceCatalog.length;
 
 		emailDraftClose.addEventListener("click", closeEmailDraftPanel);
 		emailDraftCloseButton.addEventListener("click", closeEmailDraftPanel);
+		openNewKeyPanelButton.addEventListener("click", openNewKeyPanel);
+		newKeyClose.addEventListener("click", closeNewKeyPanel);
+		newKeyCloseButton.addEventListener("click", closeNewKeyPanel);
 
 		emailDraftCopy.addEventListener("click", async () => {
 			currentEmailDraft.body = emailDraftBody.value;
@@ -1376,12 +1517,25 @@ const seedCatalogCount = defaultPriceCatalog.length;
 				try {
 					await saveKeyCatalogItem(form);
 					const sku = (new FormData(form).get("sku") ?? "").toString();
-					catalogStatus.textContent = `${sku} was updated.`;
+					catalogStatus.textContent = `${sku} was updated. Refresh to see a newly uploaded image.`;
 				} catch {
 					catalogStatus.textContent = "Could not update this catalog item.";
 				}
 			});
 		}
+
+		newKeyCatalogForm.addEventListener("submit", async (event) => {
+			event.preventDefault();
+			catalogStatus.textContent = "Adding key to the catalog...";
+			try {
+				await saveKeyCatalogItem(newKeyCatalogForm);
+				catalogStatus.textContent = "New key created successfully. Refresh the page to see it in the catalog.";
+				newKeyCatalogForm.reset();
+				closeNewKeyPanel();
+			} catch {
+				catalogStatus.textContent = "Could not create this key catalog item.";
+			}
+		});
 
 		seedKeyCatalogButton.addEventListener("click", async () => {
 			catalogStatus.textContent = "Seeding the key catalog...";
@@ -1396,5 +1550,17 @@ const seedCatalogCount = defaultPriceCatalog.length;
 		applyQuoteFilters();
 		applyContactFilters();
 		applyCatalogFilters();
+
+		document.addEventListener("keydown", (event) => {
+			if (event.key === "Escape") {
+				if (emailDraftPanel.classList.contains("flex")) {
+					closeEmailDraftPanel();
+				}
+
+				if (newKeyPanel.classList.contains("flex")) {
+					closeNewKeyPanel();
+				}
+			}
+		});
 	});
 </script>

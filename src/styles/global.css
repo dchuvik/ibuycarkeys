@@ -233,7 +233,7 @@ p {
 }
 
 .button-yellow {
-	@apply bg-yellow-200 hover:bg-yellow-100 text-gray-800 focus-visible:outline-yellow-200;
+	@apply bg-slate-200 hover:bg-slate-100 text-slate-900 focus-visible:outline-slate-300;
 }
 
 .menu-item-active {
@@ -246,7 +246,7 @@ section.bg-white + section.bg-white > .container {
 
 /* Embla */
 .embla-thumbs__slide.embla-thumbs__slide--selected {
-	@apply border-yellow-400;
+	@apply border-sky-400;
 }
 
 .embla__button {
@@ -260,12 +260,12 @@ section.bg-white + section.bg-white > .container {
 }
 
 .card-car[data-car-on-sale="true"] mark.price-on-sale {
-	@apply font-bold text-lg bg-yellow-200 px-2;
+	@apply font-bold text-lg bg-slate-200 px-2;
 }
 
 .card-car[data-car-on-sale="true"]:not([data-car-available="sold"]) .ribbon::after {
 	content: "On Sale";
-	@apply absolute z-20 bg-yellow-200 text-sm font-bold px-4 py-1;
+	@apply absolute z-20 bg-slate-200 text-sm font-bold px-4 py-1;
 }
 
 .card-car[data-car-available="sold"] .ribbon::after {
