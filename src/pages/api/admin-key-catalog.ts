@@ -125,6 +125,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 	const getValue = (key: string) =>
 		source instanceof FormData ? source.get(key) : (source[key] as string | number | boolean | null | undefined);
 	const sku = String(getValue("sku") ?? "").trim();
+	const originalSku = String(getValue("originalSku") ?? sku).trim();
 	const make = String(getValue("make") ?? "").trim();
 	const description = String(getValue("description") ?? "").trim();
 	const excellentPrice = parseRequiredNumber(getValue("excellentPrice"));
@@ -137,6 +138,24 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 	const currentImageUrl = String(getValue("currentImageUrl") ?? "").trim();
 	const imageUrlInput = String(getValue("imageUrl") ?? "").trim();
 	const imageFile = source instanceof FormData ? source.get("imageFile") : null;
+
+	if (action === "delete") {
+		const skuToDelete = originalSku || sku;
+		if (!skuToDelete) {
+			return jsonResponse({ ok: false, error: "Missing sku" }, 400);
+		}
+
+		const { data, error } = await supabaseAdmin.from("key_catalog_items").delete().eq("sku", skuToDelete).select("sku");
+		if (error) {
+			return jsonResponse({ ok: false, error: "Could not delete key catalog item" }, 500);
+		}
+
+		if (!data?.length) {
+			return jsonResponse({ ok: false, error: "Key catalog item not found" }, 404);
+		}
+
+		return jsonResponse({ ok: true, sku: skuToDelete, deleted: true });
+	}
 
 	if (!sku) {
 		return jsonResponse({ ok: false, error: "Missing sku" }, 400);
@@ -193,6 +212,9 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 	const { data, error } = await supabaseAdmin
 		.from("key_catalog_items")
 		.update({
+			sku,
+			make,
+			description,
 			excellent_price: excellentPrice,
 			adjusted_price: wornPrice,
 			light_scratches_price: lightScratchesPrice,
@@ -203,7 +225,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 			active,
 			updated_at: new Date().toISOString(),
 		})
-		.eq("sku", sku)
+		.eq("sku", originalSku || sku)
 		.select("sku");
 
 	if (error) {

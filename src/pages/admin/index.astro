@@ -694,10 +694,19 @@ const seedCatalogCount = defaultPriceCatalog.length;
 														data-make={item.make}
 													>
 														<div>
-															<p class="text-lg font-bold text-gray-950">{item.sku}</p>
-															<p class="mt-1 text-sm font-medium text-amber-800">{item.make}</p>
-															<p class="mt-2 text-sm leading-6 text-gray-600">{item.description}</p>
-															<input type="hidden" name="sku" value={item.sku} />
+															<div>
+																<label for={`catalog-sku-${item.sku}`}>SKU</label>
+																<input id={`catalog-sku-${item.sku}`} name="sku" type="text" value={item.sku} required />
+															</div>
+															<div class="mt-3">
+																<label for={`catalog-make-${item.sku}`}>Make</label>
+																<input id={`catalog-make-${item.sku}`} name="make" type="text" value={item.make} required />
+															</div>
+															<div class="mt-3">
+																<label for={`catalog-description-${item.sku}`}>Description</label>
+																<textarea id={`catalog-description-${item.sku}`} name="description" rows="3" class="min-h-24" required>{item.description}</textarea>
+															</div>
+															<input type="hidden" name="originalSku" value={item.sku} />
 															<input type="hidden" name="currentImageUrl" value={item.image_url ?? ""} />
 															<input type="hidden" name="action" value="update" />
 														</div>
@@ -749,11 +758,29 @@ const seedCatalogCount = defaultPriceCatalog.length;
 															<input id={`max-order-${item.sku}`} name="maxOrderQuantity" type="number" min="0" step="1" value={item.max_order_quantity} />
 														</div>
 														<div class="flex flex-col justify-between gap-3">
-															<label class="flex items-center gap-2 pt-7 text-sm font-medium text-gray-700">
-																<input name="active" type="checkbox" checked={item.active} />
+															<label class="flex items-center justify-end gap-3 pt-7 text-sm font-semibold text-gray-700">
 																<span>Active</span>
+																<span class="relative inline-flex h-7 w-12 items-center">
+																	<input
+																		name="active"
+																		type="checkbox"
+																		checked={item.active}
+																		class="peer sr-only"
+																	/>
+																	<span class="absolute inset-0 rounded-full bg-gray-300 transition peer-checked:bg-emerald-500"></span>
+																	<span class="absolute left-1 size-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5"></span>
+																</span>
 															</label>
-															<button type="submit" class="button button-black min-h-11 rounded-full px-4 text-sm">Save</button>
+															<div class="mt-auto flex items-center justify-end gap-2">
+																<button type="submit" class="button button-black min-h-11 rounded-full px-4 text-sm">Save</button>
+																<button
+																	type="submit"
+																	class="button button-white min-h-11 rounded-full border border-rose-200 px-4 text-sm text-rose-700 hover:bg-rose-50"
+																	data-action="delete"
+																>
+																	Delete
+																</button>
+															</div>
 														</div>
 													</form>
 												))
@@ -1513,13 +1540,35 @@ const seedCatalogCount = defaultPriceCatalog.length;
 
 			form.addEventListener("submit", async (event) => {
 				event.preventDefault();
-				catalogStatus.textContent = "Saving catalog item...";
+				const submitEvent = event as SubmitEvent;
+				const submitter = submitEvent.submitter;
+				const actionInput = form.querySelector('input[name="action"]');
+				const nextAction = submitter instanceof HTMLElement && submitter.dataset.action === "delete" ? "delete" : "update";
+				const sku = (new FormData(form).get("sku") ?? "").toString();
+
+				if (!(actionInput instanceof HTMLInputElement)) {
+					catalogStatus.textContent = "Could not submit this catalog item.";
+					return;
+				}
+
+				if (nextAction === "delete") {
+					const confirmed = window.confirm(`Delete ${sku}? This cannot be undone.`);
+					if (!confirmed) {
+						return;
+					}
+				}
+
+				actionInput.value = nextAction;
+				catalogStatus.textContent = nextAction === "delete" ? "Deleting catalog item..." : "Saving catalog item...";
 				try {
 					await saveKeyCatalogItem(form);
-					const sku = (new FormData(form).get("sku") ?? "").toString();
-					catalogStatus.textContent = `${sku} was updated. Refresh to see a newly uploaded image.`;
+					catalogStatus.textContent =
+						nextAction === "delete" ? `${sku} was deleted. Refresh to update the list.` : `${sku} was updated.`;
 				} catch {
-					catalogStatus.textContent = "Could not update this catalog item.";
+					catalogStatus.textContent =
+						nextAction === "delete" ? "Could not delete this catalog item." : "Could not update this catalog item.";
+				} finally {
+					actionInput.value = "update";
 				}
 			});
 		}
