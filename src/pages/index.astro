@@ -3,6 +3,7 @@ import Layout from "~/layouts/Layout.astro";
 import Section from "~/components/Section.astro";
 import Container from "~/components/Container.astro";
 import Heading from "~/components/Heading.astro";
+import Button from "~/components/Button.astro";
 import KeyQuoteBuilder from "~/components/forms/KeyQuoteBuilder.astro";
 import { getPriceCatalog, getPriceCatalogMakes } from "~/data/priceCatalog";
 
@@ -23,6 +24,17 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 						Instant car key quotes
 					</p>
 					<h1 class="mb-4 text-balance">Turn loose car keys into a fast payout quote</h1>
+					<div class="not-prose mb-6 mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+						<Button
+							href="#calculator"
+							color="black"
+							class="min-h-14 w-full rounded-full px-7 text-lg shadow-xl shadow-sky-900/15 ring-4 ring-sky-200/70 hover:-translate-y-0.5 sm:w-auto"
+						>
+							Start My Quote
+							<span aria-hidden="true" class="ml-3 text-2xl leading-none">&darr;</span>
+						</Button>
+						<p class="text-sm font-semibold text-slate-600">Search your key and see the payout below.</p>
+					</div>
 					<p>
 						Choose your vehicle make, find the key that matches what you have, and see your payout update as
 						you add keys to your quote.
@@ -47,7 +59,7 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 		</Container>
 	</Section>
 
-	<Section>
+	<Section id="calculator" class:list={"scroll-mt-24 bg-white"}>
 		<Container>
 			<KeyQuoteBuilder />
 		</Container>

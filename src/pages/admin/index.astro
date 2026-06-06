@@ -372,6 +372,17 @@ const seedCatalogCount = defaultPriceCatalog.length;
 
 							<form method="POST" action="/api/admin-login" class="mt-6 space-y-4">
 								<div>
+									<label for="admin-username">Username</label>
+									<input
+										id="admin-username"
+										name="username"
+										type="text"
+										value="admin"
+										autocomplete="username"
+										readonly
+									/>
+								</div>
+								<div>
 									<label for="admin-password">Admin password</label>
 									<input
 										id="admin-password"
@@ -447,6 +458,7 @@ const seedCatalogCount = defaultPriceCatalog.length;
 									Approve and Reject use your device's native email app. Approval also downloads a PDF invoice that the admin
 									should attach manually before sending.
 								</div>
+								<p id="quote-action-status" class="hidden rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-800 ring-1 ring-slate-200"></p>
 
 								<div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_200px_200px_200px]">
 									<div>
@@ -908,6 +920,230 @@ const seedCatalogCount = defaultPriceCatalog.length;
 	import { jsPDF } from "jspdf";
 
 	document.addEventListener("astro:page-load", () => {
+		const quoteActionStatus = document.getElementById("quote-action-status");
+		const emailDraftPanel = document.getElementById("email-draft-panel");
+		const emailDraftTo = document.getElementById("email-draft-to");
+		const emailDraftSubject = document.getElementById("email-draft-subject");
+		const emailDraftBody = document.getElementById("email-draft-body");
+		const emailDraftStatus = document.getElementById("email-draft-status");
+		const emailDraftOpenMailto = document.getElementById("email-draft-open-mailto");
+
+		const showQuoteActionStatus = (message, tone = "info") => {
+			if (!(quoteActionStatus instanceof HTMLElement)) {
+				return;
+			}
+
+			quoteActionStatus.textContent = message;
+			quoteActionStatus.classList.remove("hidden", "bg-slate-100", "text-slate-800", "ring-slate-200", "bg-red-50", "text-red-700", "ring-red-200");
+			quoteActionStatus.classList.add(
+				...(tone === "error"
+					? ["bg-red-50", "text-red-700", "ring-red-200"]
+					: ["bg-slate-100", "text-slate-800", "ring-slate-200"])
+			);
+		};
+
+		const openQuoteEmailDraft = (draft) => {
+			if (
+				!(
+					emailDraftPanel instanceof HTMLElement &&
+					emailDraftTo instanceof HTMLElement &&
+					emailDraftSubject instanceof HTMLElement &&
+					emailDraftBody instanceof HTMLTextAreaElement &&
+					emailDraftStatus instanceof HTMLElement &&
+					emailDraftOpenMailto instanceof HTMLAnchorElement
+				)
+			) {
+				return;
+			}
+
+			emailDraftTo.textContent = draft.to;
+			emailDraftSubject.textContent = draft.subject;
+			emailDraftBody.value = draft.body;
+			emailDraftOpenMailto.href = draft.href;
+			emailDraftStatus.textContent = "";
+			emailDraftPanel.classList.remove("hidden");
+			emailDraftPanel.classList.add("flex");
+			document.body.classList.add("overflow-hidden");
+		};
+
+		const saveQuoteStatusFromButton = async (quoteId, status) => {
+			const response = await fetch("/api/admin-quote-status", {
+				method: "POST",
+				credentials: "same-origin",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ id: quoteId, status }),
+			});
+
+			if (!response.ok) {
+				let message = "Could not update quote status.";
+				try {
+					const payload = await response.json();
+					message = payload.error ?? message;
+				} catch {
+					// Keep the generic message if the server did not return JSON.
+				}
+				throw new Error(message);
+			}
+		};
+
+		const updateQuoteRowStatusFromButton = (button, status) => {
+			const row = button.closest("[data-quote-row]");
+			if (!(row instanceof HTMLElement)) {
+				return;
+			}
+
+			row.dataset.status = status;
+			const badge = row.querySelector("[data-quote-status-badge]");
+			if (badge instanceof HTMLElement) {
+				badge.textContent = status;
+				badge.className = "inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]";
+				badge.classList.add(
+					...(status === "approved"
+						? ["bg-emerald-100", "text-emerald-800"]
+						: status === "rejected"
+							? ["bg-rose-100", "text-rose-800"]
+							: ["bg-amber-100", "text-amber-800"])
+				);
+			}
+		};
+
+		const buildQuoteMailto = (button, status) => {
+			const customerEmail = button.dataset.customerEmail ?? "";
+			const customerName = button.dataset.customerName ?? "there";
+			const quoteId = button.dataset.quoteId?.slice(0, 8) ?? "";
+			const payout = button.dataset.estimatedPayout ?? "the approved amount";
+			const subject = status === "approved" ? "Your quote has been accepted - Invoice enclosed" : "Update on your car key quote";
+			const body =
+				status === "approved"
+					? [
+							`Hi ${customerName},`,
+							"",
+							`Your quote has been accepted for ${payout}. Attached is your invoice.`,
+							"Please include this invoice in your shipment to prevent delay in your payout.",
+							"",
+							`Quote reference: #${quoteId}`,
+							"",
+							"Thank you,",
+							"I Buy Car Keys",
+					  ].join("\n")
+					: [
+							`Hi ${customerName},`,
+							"",
+							"Thank you for sending your quote request. We are unable to accept this quote at this time.",
+							"",
+							`Quote reference: #${quoteId}`,
+							"",
+							"If you would like us to take another look, reply with any updated details or photos.",
+							"",
+							"Thank you,",
+							"I Buy Car Keys",
+					  ].join("\n");
+
+			return {
+				to: customerEmail,
+				subject,
+				body,
+				href: `mailto:${encodeURIComponent(customerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+			};
+		};
+
+		const downloadQuoteInvoice = (button) => {
+			const doc = new jsPDF({ unit: "pt", format: "letter" });
+			const quoteId = button.dataset.quoteId?.slice(0, 8) ?? "QUOTE";
+			const customerName = button.dataset.customerName ?? "";
+			const customerEmail = button.dataset.customerEmail ?? "";
+			const customerPhone = button.dataset.customerPhone ?? "";
+			const address = button.dataset.customerAddress ?? "";
+			const city = button.dataset.customerCity ?? "";
+			const state = button.dataset.customerState ?? "";
+			const zip = button.dataset.customerZip ?? "";
+			const totalKeys = button.dataset.totalKeys ?? "";
+			const estimatedPayout = button.dataset.estimatedPayout ?? "";
+			const quoteSummary = button.dataset.quoteSummary ?? "";
+			let y = 56;
+
+			doc.setFont("helvetica", "bold");
+			doc.setFontSize(22);
+			doc.text("I Buy Car Keys", 48, y);
+			doc.setFontSize(12);
+			doc.setFont("helvetica", "normal");
+			y += 24;
+			doc.text("Quote Approval Invoice", 48, y);
+			y += 24;
+			doc.text(`Quote reference: #${quoteId}`, 48, y);
+			y += 16;
+			doc.text(`Approved payout: ${estimatedPayout || "Pending review"}`, 48, y);
+			y += 16;
+			doc.text(`Total keys: ${totalKeys || "-"}`, 48, y);
+			y += 28;
+			doc.setFont("helvetica", "bold");
+			doc.text("Customer", 48, y);
+			doc.setFont("helvetica", "normal");
+			y += 18;
+			doc.text(customerName, 48, y);
+			y += 16;
+			doc.text(customerEmail, 48, y);
+			y += 16;
+			doc.text(customerPhone, 48, y);
+			y += 16;
+			doc.text(`${address}, ${city}, ${state} ${zip}`.replace(/\s+,/g, ","), 48, y);
+			y += 28;
+			doc.setFont("helvetica", "bold");
+			doc.text("Quote Summary", 48, y);
+			doc.setFont("helvetica", "normal");
+			y += 18;
+			doc.text(doc.splitTextToSize(quoteSummary, 516), 48, y);
+			doc.save(`ibuycarkeys-invoice-${quoteId}.pdf`);
+		};
+
+		document.addEventListener(
+			"click",
+			async (event) => {
+				const target = event.target;
+				if (!(target instanceof Element)) {
+					return;
+				}
+
+				const button = target.closest("[data-approve-quote], [data-reject-quote], [data-mark-new-quote]");
+				if (!(button instanceof HTMLButtonElement)) {
+					return;
+				}
+
+				event.preventDefault();
+				event.stopPropagation();
+				const quoteId = button.dataset.quoteId ?? "";
+				const nextStatus = button.hasAttribute("data-approve-quote")
+					? "approved"
+					: button.hasAttribute("data-reject-quote")
+						? "rejected"
+						: "new";
+
+				try {
+					if (nextStatus === "approved") {
+						downloadQuoteInvoice(button);
+						openQuoteEmailDraft(buildQuoteMailto(button, nextStatus));
+					}
+
+					if (nextStatus === "rejected") {
+						openQuoteEmailDraft(buildQuoteMailto(button, nextStatus));
+					}
+
+					await saveQuoteStatusFromButton(quoteId, nextStatus);
+					updateQuoteRowStatusFromButton(button, nextStatus);
+					showQuoteActionStatus(`Quote marked ${nextStatus}.`);
+				} catch (error) {
+					const message = `Could not mark quote ${nextStatus}: ${
+						error instanceof Error ? error.message : "Unknown error"
+					}`;
+					showQuoteActionStatus(message, "error");
+					if (emailDraftStatus instanceof HTMLElement) {
+						emailDraftStatus.textContent = message;
+					}
+				}
+			},
+			true
+		);
+
 		const searchInput = document.getElementById("quote-search");
 		const stateFilter = document.getElementById("quote-state-filter");
 		const payoutFilter = document.getElementById("quote-payout-filter");
@@ -920,15 +1156,9 @@ const seedCatalogCount = defaultPriceCatalog.length;
 		const replyContactButtons = Array.from(document.querySelectorAll("[data-reply-contact]"));
 		const markNewContactButtons = Array.from(document.querySelectorAll("[data-mark-new-contact]"));
 		const contactRows = Array.from(document.querySelectorAll("[data-contact-row]"));
-		const emailDraftPanel = document.getElementById("email-draft-panel");
 		const emailDraftClose = document.getElementById("email-draft-close");
 		const emailDraftCloseButton = document.getElementById("email-draft-close-button");
-		const emailDraftTo = document.getElementById("email-draft-to");
-		const emailDraftSubject = document.getElementById("email-draft-subject");
-		const emailDraftBody = document.getElementById("email-draft-body");
-		const emailDraftStatus = document.getElementById("email-draft-status");
 		const emailDraftCopy = document.getElementById("email-draft-copy");
-		const emailDraftOpenMailto = document.getElementById("email-draft-open-mailto");
 		const newKeyPanel = document.getElementById("new-key-panel");
 		const newKeyClose = document.getElementById("new-key-close");
 		const newKeyCloseButton = document.getElementById("new-key-close-button");
@@ -954,6 +1184,7 @@ const seedCatalogCount = defaultPriceCatalog.length;
 				payoutFilter instanceof HTMLSelectElement &&
 				quoteResultsCount instanceof HTMLElement &&
 				quoteEmptyState instanceof HTMLElement &&
+				quoteActionStatus instanceof HTMLElement &&
 				statusFilter instanceof HTMLSelectElement &&
 				emailDraftPanel instanceof HTMLElement &&
 				emailDraftClose instanceof HTMLElement &&
@@ -1153,12 +1384,20 @@ const seedCatalogCount = defaultPriceCatalog.length;
 		const saveQuoteStatus = async (quoteId, status) => {
 			const response = await fetch("/api/admin-quote-status", {
 				method: "POST",
+				credentials: "same-origin",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ id: quoteId, status }),
 			});
 
 			if (!response.ok) {
-				throw new Error("Could not update quote status.");
+				let message = "Could not update quote status.";
+				try {
+					const payload = await response.json();
+					message = payload.error ?? message;
+				} catch {
+					// Keep the generic message if the server did not return JSON.
+				}
+				throw new Error(message);
 			}
 		};
 
@@ -1435,9 +1674,14 @@ const seedCatalogCount = defaultPriceCatalog.length;
 				try {
 					await saveQuoteStatus(quoteId, "approved");
 					updateQuoteRowStatus(quoteId, "approved");
+					showQuoteActionStatus("Quote marked approved. It may move out of view if the status filter is set to New.");
 					emailDraftStatus.textContent = "Status updated to approved. Attach the downloaded invoice, then send the email when ready.";
-				} catch {
-					emailDraftStatus.textContent = "The invoice downloaded, but the status could not be updated.";
+				} catch (error) {
+					const message = `The invoice downloaded, but the status could not be updated: ${
+						error instanceof Error ? error.message : "Unknown error"
+					}`;
+					showQuoteActionStatus(message, "error");
+					emailDraftStatus.textContent = message;
 				}
 			});
 		}
@@ -1454,9 +1698,14 @@ const seedCatalogCount = defaultPriceCatalog.length;
 				try {
 					await saveQuoteStatus(quoteId, "rejected");
 					updateQuoteRowStatus(quoteId, "rejected");
+					showQuoteActionStatus("Quote marked rejected. It may move out of view if the status filter is set to New.");
 					emailDraftStatus.textContent = "Status updated to rejected. Send the draft when ready.";
-				} catch {
-					emailDraftStatus.textContent = "The email draft is ready, but the status could not be updated.";
+				} catch (error) {
+					const message = `The email draft is ready, but the status could not be updated: ${
+						error instanceof Error ? error.message : "Unknown error"
+					}`;
+					showQuoteActionStatus(message, "error");
+					emailDraftStatus.textContent = message;
 				}
 			});
 		}
@@ -1471,8 +1720,13 @@ const seedCatalogCount = defaultPriceCatalog.length;
 				try {
 					await saveQuoteStatus(quoteId, "new");
 					updateQuoteRowStatus(quoteId, "new");
-				} catch {
-					window.alert("Could not update this quote back to New.");
+					showQuoteActionStatus("Quote marked new. It may move out of view if another status filter is active.");
+				} catch (error) {
+					const message = `Could not update this quote back to New: ${
+						error instanceof Error ? error.message : "Unknown error"
+					}`;
+					showQuoteActionStatus(message, "error");
+					window.alert(message);
 				}
 			});
 		}

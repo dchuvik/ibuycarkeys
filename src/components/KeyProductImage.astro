@@ -5,10 +5,10 @@ const { imageUrl, alt = "Car key product" } = Astro.props;
 const src = typeof imageUrl === "string" && imageUrl.trim().length ? imageUrl.trim() : LogoImage.src;
 ---
 
-<div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-100 via-sky-50 to-white p-4">
+<div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-100 via-sky-50 to-white p-2">
 	<div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(14,165,233,0.18),_transparent_40%)]"></div>
-	<img src={src} alt={alt} class="relative mx-auto aspect-[4/3] w-full rounded-xl object-contain" loading="lazy" />
-	<div class="absolute bottom-3 right-3 rounded-full bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-sky-700">
+	<img src={src} alt={alt} class="relative mx-auto aspect-[4/3] w-full rounded-lg object-contain" loading="lazy" />
+	<div class="absolute bottom-2 right-2 rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-700">
 		Key
 	</div>
 </div>

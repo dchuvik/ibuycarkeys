@@ -6,6 +6,7 @@ const {
 	title = "Browse the key catalog",
 	description = "Filter by make, search by SKU or FCC ID, and pick the key that matches what you have.",
 	scrollClass = "max-h-[70rem]",
+	showHeader = true,
 } = Astro.props;
 
 const priceCatalog = await getPriceCatalog();
@@ -13,23 +14,26 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 ---
 
 <section id="price-catalog" class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100 lg:p-8">
-	<div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-		<div class="max-w-3xl">
-			<p class="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">Price list</p>
-			<h2 class="mt-2 text-3xl font-bold">{title}</h2>
-			<p class="mt-3 text-gray-600">{description}</p>
-		</div>
-		<div class="rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200">
-			<p class="text-xs font-semibold uppercase tracking-[0.16em] text-sky-800">Browse results</p>
-			<p id="catalog-results-count" class="mt-1 text-sm text-gray-700">{priceCatalog.length} catalog items</p>
-		</div>
-	</div>
+	{
+		showHeader && (
+			<div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+				<div class="max-w-3xl">
+					<p class="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">Price list</p>
+					<h2 class="mt-2 text-3xl font-bold">{title}</h2>
+					<p class="mt-3 text-gray-600">{description}</p>
+				</div>
+				<div class="rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200">
+					<p class="text-xs font-semibold uppercase tracking-[0.16em] text-sky-800">Browse results</p>
+					<p id="catalog-results-count" class="mt-1 text-sm text-gray-700">{priceCatalog.length} catalog items</p>
+				</div>
+			</div>
+		)
+	}
 
-	<div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)_220px]">
+	<div class:list={[showHeader ? "mt-6" : "", "grid grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)]"]}>
 		<div>
 			<label for="catalog-make">Make</label>
 			<select id="catalog-make">
-				<option value="">Select a make</option>
 				<option value="all">All makes</option>
 				{priceCatalogMakes.map((make) => <option value={make}>{make}</option>)}
 			</select>
@@ -37,14 +41,6 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 		<div>
 			<label for="catalog-search">Search catalog</label>
 			<input id="catalog-search" type="search" placeholder="Search SKU, description, FCC ID..." autocomplete="off" />
-		</div>
-		<div>
-			<label for="catalog-worn">Condition pricing</label>
-			<select id="catalog-worn">
-				<option value="all">All items</option>
-				<option value="has-worn">Has condition prices</option>
-				<option value="no-worn">No condition prices</option>
-			</select>
 		</div>
 	</div>
 
@@ -54,66 +50,67 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 			<select id="catalog-sort">
 				<option value="featured">Featured order</option>
 				<option value="price-asc">Price: low to high</option>
-				<option value="price-desc">Price: high to low</option>
+				<option value="price-desc" selected>Price: high to low</option>
 			</select>
 		</div>
 	</div>
 
 	<div class:list={["mt-6 overflow-y-auto rounded-3xl border border-gray-200 bg-gray-50 p-3 pr-2", scrollClass]}>
-		<div id="catalog-card-grid" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+		<div id="catalog-card-grid" class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xxxl:grid-cols-5">
 			{
 				priceCatalog.map((item) => (
 					<article
-						class="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+						class="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
 						data-make={item.make}
-						data-has-worn={item.lightScratchesPrice === null && item.wornPrice === null ? "false" : "true"}
 						data-search={`${item.sku} ${item.make} ${item.description}`.toLowerCase()}
 						data-price={item.price}
 						data-inventory-count={item.inventoryCount}
 						data-max-order-quantity={item.maxOrderQuantity}
 					>
 						<KeyProductImage imageUrl={item.imageUrl} alt={`${item.make} ${item.sku} key`} />
-						<div class="mt-5 space-y-5">
+						<div class="mt-3 flex flex-1 flex-col">
 							<div>
 								<div>
-									<p class="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">{item.make}</p>
-									<h4 class="mt-2 min-h-[4rem] text-3xl font-bold leading-tight text-gray-950 sm:min-h-[3.75rem] sm:text-2xl">
+									<div class="flex items-start justify-between gap-2">
+										<p class="min-w-0 text-[11px] font-bold uppercase tracking-[0.12em] text-sky-700">{item.make}</p>
+										<p class="shrink-0 rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-gray-700">{item.sku}</p>
+									</div>
+									<h6 class="mt-2 text-xs font-semibold leading-snug text-gray-950">
 										{item.description}
-									</h4>
-									<p class="mt-3 inline-flex rounded-full bg-gray-200 px-3 py-1 text-xs font-bold uppercase tracking-[0.1em] text-gray-700">{item.sku}</p>
+									</h6>
 								</div>
 							</div>
-							<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+							<div class="mt-auto grid grid-cols-1 gap-1.5 pt-3">
 								<button
 									type="button"
-									class="group rounded-2xl border border-gray-200 bg-gray-50 px-3 py-3 text-left transition hover:border-gray-900 hover:bg-gray-900 hover:text-white focus:border-gray-900 focus:bg-gray-900 focus:text-white focus:outline-none"
+									class="group flex min-h-10 items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 px-2.5 py-2 text-left transition hover:border-gray-900 hover:bg-gray-900 hover:text-white focus:border-gray-900 focus:bg-gray-900 focus:text-white focus:outline-none"
 									data-select-sku={item.sku}
 									data-select-condition="excellent"
 								>
-									<span class="block text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500 transition group-hover:text-white group-focus:text-white">Excellent</span>
-									<span class="mt-1 block text-sm font-bold text-gray-900 transition group-hover:text-white group-focus:text-white">${item.price.toFixed(2)}</span>
+									<span class="min-w-0 text-[11px] font-semibold text-gray-500 transition group-hover:text-white group-focus:text-white">Excellent</span>
+									<span class="shrink-0 text-sm font-bold text-gray-900 transition group-hover:text-white group-focus:text-white">${item.price.toFixed(2)}</span>
 								</button>
 								<button
 									type="button"
-									class="group rounded-2xl border border-gray-200 bg-gray-50 px-3 py-3 text-left transition hover:border-gray-900 hover:bg-gray-900 hover:text-white focus:border-gray-900 focus:bg-gray-900 focus:text-white focus:outline-none"
+									class="group flex min-h-10 items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 px-2.5 py-2 text-left transition hover:border-gray-900 hover:bg-gray-900 hover:text-white focus:border-gray-900 focus:bg-gray-900 focus:text-white focus:outline-none"
 									data-select-sku={item.sku}
 									data-select-condition="light-scratches"
 								>
-									<span class="block text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500 transition group-hover:text-white group-focus:text-white">
+									<span class="min-w-0 text-[11px] font-semibold text-gray-500 transition group-hover:text-white group-focus:text-white">
 										Light scratches
 									</span>
-									<span class="mt-1 block text-sm font-bold text-gray-900 transition group-hover:text-white group-focus:text-white">
+									<span class="shrink-0 text-sm font-bold text-gray-900 transition group-hover:text-white group-focus:text-white">
 										${(item.lightScratchesPrice ?? item.price).toFixed(2)}
 									</span>
 								</button>
 								<button
 									type="button"
-									class="group rounded-2xl border border-gray-200 bg-gray-50 px-3 py-3 text-left transition hover:border-gray-900 hover:bg-gray-900 hover:text-white focus:border-gray-900 focus:bg-gray-900 focus:text-white focus:outline-none"
+									class="group flex min-h-10 items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 px-2.5 py-2 text-left transition hover:border-gray-900 hover:bg-gray-900 hover:text-white focus:border-gray-900 focus:bg-gray-900 focus:text-white focus:outline-none"
 									data-select-sku={item.sku}
 									data-select-condition="worn"
 								>
-									<span class="block text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500 transition group-hover:text-white group-focus:text-white">Worn</span>
-									<span class="mt-1 block text-sm font-bold text-gray-900 transition group-hover:text-white group-focus:text-white">
+									<span class="min-w-0 text-[11px] font-semibold text-gray-500 transition group-hover:text-white group-focus:text-white">Worn</span>
+									<span class="shrink-0 text-sm font-bold text-gray-900 transition group-hover:text-white group-focus:text-white">
 										${(item.wornPrice ?? item.price).toFixed(2)}
 									</span>
 								</button>
@@ -130,7 +127,6 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 	document.addEventListener("astro:page-load", () => {
 		const searchField = document.getElementById("catalog-search");
 		const makeField = document.getElementById("catalog-make");
-		const wornField = document.getElementById("catalog-worn");
 		const sortField = document.getElementById("catalog-sort");
 		const cardGrid = document.getElementById("catalog-card-grid");
 		const resultsCount = document.getElementById("catalog-results-count");
@@ -139,7 +135,6 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 			!(
 				searchField instanceof HTMLInputElement &&
 				makeField instanceof HTMLSelectElement &&
-				wornField instanceof HTMLSelectElement &&
 				sortField instanceof HTMLSelectElement &&
 				cardGrid instanceof HTMLElement &&
 				resultsCount instanceof HTMLElement
@@ -175,7 +170,6 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 		const applyFilters = () => {
 			const searchValue = searchField.value.trim().toLowerCase();
 			const makeValue = makeField.value;
-			const wornValue = wornField.value;
 			const showAllMakes = makeValue === "all";
 			const hasSelectedMake = makeValue.length > 0 && makeValue !== "all";
 			let visibleCount = 0;
@@ -184,12 +178,7 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 				const hasSearch = searchValue.length > 0;
 				const matchesSearch = !hasSearch || (card.dataset.search ?? "").includes(searchValue);
 				const matchesMake = !hasSelectedMake || card.dataset.make === makeValue;
-				const hasWorn = card.dataset.hasWorn === "true";
-				const matchesWorn =
-					wornValue === "all" ||
-					(wornValue === "has-worn" && hasWorn) ||
-					(wornValue === "no-worn" && !hasWorn);
-				const visible = (showAllMakes || hasSelectedMake || hasSearch) && matchesSearch && matchesMake && matchesWorn;
+				const visible = (showAllMakes || hasSelectedMake || hasSearch) && matchesSearch && matchesMake;
 
 				card.style.display = visible ? "" : "none";
 				if (visible) {
@@ -211,7 +200,7 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 
 			resultsCount.textContent = searchValue
 				? `${visibleCount} matching catalog item${visibleCount === 1 ? "" : "s"} across all makes`
-				: "Choose a make or select All makes to browse the full catalog";
+				: `${visibleCount} catalog item${visibleCount === 1 ? "" : "s"} across all makes`;
 		};
 
 		const updateSelectedCardButton = (selectedButton) => {
@@ -251,7 +240,6 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 
 		searchField.addEventListener("input", applyFilters);
 		makeField.addEventListener("change", applyFilters);
-		wornField.addEventListener("change", applyFilters);
 		sortField.addEventListener("change", applyFilters);
 		applyFilters();
 	});
