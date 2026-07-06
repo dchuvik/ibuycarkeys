@@ -8,6 +8,7 @@ export interface PriceCatalogItem {
 	wornPrice: number | null;
 	imageUrl: string | null;
 	make: string;
+	keyType: string | null;
 	inventoryCount: number;
 	maxOrderQuantity: number;
 	active: boolean;
@@ -378,6 +379,7 @@ export const parseDefaultPriceCatalog = () =>
 				wornPrice: conditionPrice ? Number(conditionPrice) : null,
 				imageUrl: null,
 				make: makeByPrefix[prefix] ?? description.split(" ")[0],
+				keyType: null,
 				inventoryCount: 0,
 				maxOrderQuantity: 25,
 				active: true,
@@ -396,18 +398,12 @@ const mapSupabaseCatalogRow = (item: Record<string, unknown>): PriceCatalogItem 
 	price: Number(item.excellent_price ?? 0),
 	lightScratchesPrice:
 		item.light_scratches_price === null || item.light_scratches_price === undefined
-			? item.adjusted_price === null || item.adjusted_price === undefined
-				? null
-				: Number(item.adjusted_price)
+			? null
 			: Number(item.light_scratches_price),
-	wornPrice:
-		item.worn_price === null || item.worn_price === undefined
-			? item.adjusted_price === null || item.adjusted_price === undefined
-				? null
-				: Number(item.adjusted_price)
-			: Number(item.worn_price),
+	wornPrice: item.worn_price === null || item.worn_price === undefined ? null : Number(item.worn_price),
 	imageUrl: item.image_url === null || item.image_url === undefined ? null : String(item.image_url),
 	make: String(item.make ?? ""),
+	keyType: item.key_type === null || item.key_type === undefined ? null : String(item.key_type),
 	inventoryCount: Number(item.inventory_count ?? 0),
 	maxOrderQuantity: Number(item.max_order_quantity ?? 0),
 	active: Boolean(item.active),
@@ -440,4 +436,10 @@ export const getPriceCatalog = async () => {
 export const getPriceCatalogMakes = async () => {
 	const items = await getPriceCatalog();
 	return [...new Set(items.map((item) => item.make))].sort((a, b) => a.localeCompare(b));
+};
+
+export const getPriceCatalogKeyTypes = async () => {
+	const items = await getPriceCatalog();
+	return [...new Set(items.map((item) => item.keyType).filter((keyType): keyType is string => Boolean(keyType)))]
+		.sort((a, b) => a.localeCompare(b));
 };
