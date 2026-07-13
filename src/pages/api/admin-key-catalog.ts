@@ -7,6 +7,7 @@ import { defaultPriceCatalog } from "~/data/priceCatalog";
 export const prerender = false;
 
 const keyCatalogImageBucket = "key-catalog-images";
+const keyTypeOptions = new Set(["smart", "flip", "rhk", "fobik", "remote"]);
 
 const jsonResponse = (body: Record<string, unknown>, status = 200) =>
 	new Response(JSON.stringify(body), {
@@ -101,6 +102,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 		const rows = defaultPriceCatalog.map((item) => ({
 			sku: item.sku,
 			make: item.make,
+			key_type: item.keyType,
 			description: item.description,
 			excellent_price: item.price,
 			light_scratches_price: item.lightScratchesPrice,
@@ -126,6 +128,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 	const sku = String(getValue("sku") ?? "").trim();
 	const originalSku = String(getValue("originalSku") ?? sku).trim();
 	const make = String(getValue("make") ?? "").trim();
+	const keyType = String(getValue("keyType") ?? "").trim().toLowerCase();
 	const description = String(getValue("description") ?? "").trim();
 	const excellentPrice = parseRequiredNumber(getValue("excellentPrice"));
 	const lightScratchesPrice = parseNullableNumber(getValue("lightScratchesPrice"));
@@ -174,6 +177,10 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 		return jsonResponse({ ok: false, error: "Invalid numeric values" }, 400);
 	}
 
+	if (keyType && !keyTypeOptions.has(keyType)) {
+		return jsonResponse({ ok: false, error: "Invalid key type" }, 400);
+	}
+
 	let uploadedImageUrl: string | null = null;
 	try {
 		if (imageFile instanceof File && imageFile.size) {
@@ -190,6 +197,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 		const { error } = await supabaseAdmin.from("key_catalog_items").insert({
 			sku,
 			make,
+			key_type: keyType || null,
 			description,
 			excellent_price: excellentPrice,
 			light_scratches_price: lightScratchesPrice,
@@ -212,6 +220,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 		.update({
 			sku,
 			make,
+			key_type: keyType || null,
 			description,
 			excellent_price: excellentPrice,
 			light_scratches_price: lightScratchesPrice,
