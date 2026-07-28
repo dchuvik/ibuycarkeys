@@ -1003,6 +1003,8 @@ const seedCatalogCount = defaultPriceCatalog.length;
 				}
 				throw new Error(message);
 			}
+
+			return response.json();
 		};
 
 		const updateQuoteRowStatusFromButton = (button, status) => {
@@ -1138,18 +1140,23 @@ const seedCatalogCount = defaultPriceCatalog.length;
 						: "new";
 
 				try {
-					if (nextStatus === "approved") {
-						downloadQuoteInvoice(button);
-						openQuoteEmailDraft(buildQuoteMailto(button, nextStatus));
-					}
-
-					if (nextStatus === "rejected") {
-						openQuoteEmailDraft(buildQuoteMailto(button, nextStatus));
-					}
-
-					await saveQuoteStatusFromButton(quoteId, nextStatus);
+					const result = await saveQuoteStatusFromButton(quoteId, nextStatus);
 					updateQuoteRowStatusFromButton(button, nextStatus);
-					showQuoteActionStatus(`Quote marked ${nextStatus}.`);
+
+					if (nextStatus === "new") {
+						showQuoteActionStatus("Quote marked new.");
+						return;
+					}
+
+					if (result.emailSent) {
+						showQuoteActionStatus(`Quote marked ${nextStatus} and email sent.`);
+						return;
+					}
+
+					showQuoteActionStatus(
+						`Quote marked ${nextStatus}, but email was not sent: ${result.emailError || "Unknown email error"}`,
+						"error"
+					);
 				} catch (error) {
 					const message = `Could not mark quote ${nextStatus}: ${
 						error instanceof Error ? error.message : "Unknown error"
@@ -1418,6 +1425,8 @@ const seedCatalogCount = defaultPriceCatalog.length;
 				}
 				throw new Error(message);
 			}
+
+			return response.json();
 		};
 
 		const setContactStatusBadgeClass = (badge, status) => {
@@ -1687,20 +1696,20 @@ const seedCatalogCount = defaultPriceCatalog.length;
 
 			button.addEventListener("click", async () => {
 				const quoteId = button.dataset.quoteId ?? "";
-				const draft = buildApproveMailto(button);
-				downloadInvoicePdf(button);
-				showEmailDraftPanel(draft);
 				try {
-					await saveQuoteStatus(quoteId, "approved");
+					const result = await saveQuoteStatus(quoteId, "approved");
 					updateQuoteRowStatus(quoteId, "approved");
-					showQuoteActionStatus("Quote marked approved. It may move out of view if the status filter is set to New.");
-					emailDraftStatus.textContent = "Status updated to approved. Attach the downloaded invoice, then send the email when ready.";
+					showQuoteActionStatus(
+						result.emailSent
+							? "Quote marked approved and email sent."
+							: `Quote marked approved, but email was not sent: ${result.emailError || "Unknown email error"}`,
+						result.emailSent ? "info" : "error"
+					);
 				} catch (error) {
-					const message = `The invoice downloaded, but the status could not be updated: ${
+					const message = `Quote could not be approved: ${
 						error instanceof Error ? error.message : "Unknown error"
 					}`;
 					showQuoteActionStatus(message, "error");
-					emailDraftStatus.textContent = message;
 				}
 			});
 		}
@@ -1712,19 +1721,20 @@ const seedCatalogCount = defaultPriceCatalog.length;
 
 			button.addEventListener("click", async () => {
 				const quoteId = button.dataset.quoteId ?? "";
-				const draft = buildRejectMailto(button);
-				showEmailDraftPanel(draft);
 				try {
-					await saveQuoteStatus(quoteId, "rejected");
+					const result = await saveQuoteStatus(quoteId, "rejected");
 					updateQuoteRowStatus(quoteId, "rejected");
-					showQuoteActionStatus("Quote marked rejected. It may move out of view if the status filter is set to New.");
-					emailDraftStatus.textContent = "Status updated to rejected. Send the draft when ready.";
+					showQuoteActionStatus(
+						result.emailSent
+							? "Quote marked rejected and email sent."
+							: `Quote marked rejected, but email was not sent: ${result.emailError || "Unknown email error"}`,
+						result.emailSent ? "info" : "error"
+					);
 				} catch (error) {
-					const message = `The email draft is ready, but the status could not be updated: ${
+					const message = `Quote could not be rejected: ${
 						error instanceof Error ? error.message : "Unknown error"
 					}`;
 					showQuoteActionStatus(message, "error");
-					emailDraftStatus.textContent = message;
 				}
 			});
 		}

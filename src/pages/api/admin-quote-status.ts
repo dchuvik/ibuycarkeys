@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { adminSessionCookieName, isValidAdminSessionToken } from "~/lib/adminAuth";
+import { sendQuoteStatusEmail } from "~/lib/quoteEmails";
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from "~/lib/supabaseAdmin";
 import { supabaseTables } from "~/lib/supabaseTables";
 
@@ -51,7 +52,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 		error: currentQuoteError,
 	} = await supabaseAdmin
 		.from(supabaseTables.quoteRequests)
-		.select("id, status")
+		.select("id, status, customer_name, customer_email, total_keys, estimated_payout, quote_summary")
 		.eq("id", id)
 		.maybeSingle();
 
@@ -154,7 +155,24 @@ export const POST: APIRoute = async ({ cookies, request }) => {
 		});
 	}
 
-	return new Response(JSON.stringify({ ok: true, status }), {
+	let emailSent = false;
+	let emailError = "";
+
+	if (status === "approved" || status === "rejected") {
+		const emailResult = await sendQuoteStatusEmail({
+			status,
+			customerName: String(currentQuote.customer_name ?? ""),
+			customerEmail: String(currentQuote.customer_email ?? ""),
+			estimatedPayout: String(currentQuote.estimated_payout ?? ""),
+			totalKeys: currentQuote.total_keys === null || currentQuote.total_keys === undefined ? "" : String(currentQuote.total_keys),
+			quoteSummary: String(currentQuote.quote_summary ?? ""),
+			quoteReference: id.slice(0, 8),
+		});
+		emailSent = emailResult.sent;
+		emailError = emailResult.error;
+	}
+
+	return new Response(JSON.stringify({ ok: true, status, emailSent, emailError }), {
 		status: 200,
 		headers: { "Content-Type": "application/json" },
 	});

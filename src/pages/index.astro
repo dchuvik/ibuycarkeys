@@ -1,11 +1,13 @@
 ---
 import Layout from "~/layouts/Layout.astro";
+import { Image } from "astro:assets";
 import Section from "~/components/Section.astro";
 import Container from "~/components/Container.astro";
 import Heading from "~/components/Heading.astro";
 import Button from "~/components/Button.astro";
 import KeyQuoteBuilder from "~/components/forms/KeyQuoteBuilder.astro";
 import { getPriceCatalog, getPriceCatalogMakes } from "~/data/priceCatalog";
+import heroKeys from "~/assets/images/car-key-quote-hero.png";
 
 const priceCatalog = await getPriceCatalog();
 const priceCatalogMakes = await getPriceCatalogMakes();
@@ -16,91 +18,124 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 	title="Sell Your Car Keys"
 	description="Search your car key, get an instant payout estimate, and keep track of every key in one quote cart."
 >
-	<Section class:list={"bg-gradient-to-br from-slate-100 via-white to-sky-50"}>
+	<Section class:list={"relative overflow-hidden bg-gray-950 text-white"}>
+		<div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(14,165,233,0.18),transparent_32%)]"></div>
 		<Container>
-			<div class="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center">
-				<div class="prose max-w-3xl">
-					<p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">
-						Instant car key quotes
+			<div class="relative grid min-h-[42rem] grid-cols-1 gap-10 py-16 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:py-20">
+				<div class="prose prose-invert relative z-10 max-w-3xl">
+					<p class="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-sky-300">
+						Your spare keys are worth something
 					</p>
-					<h1 class="mb-4 text-balance">Turn loose car keys into a fast payout quote</h1>
-					<div class="not-prose mb-6 mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+					<h1 class="mb-5 text-balance !text-5xl !leading-[0.98] tracking-[-0.045em] lg:!text-7xl">
+						Turn car keys into cash.
+					</h1>
+					<p class="max-w-xl !text-lg !leading-8 text-slate-300 lg:!text-xl">
+						Find your exact key, see what we’ll pay, and build your quote in minutes. No guesswork, no
+						haggling.
+					</p>
+					<div class="not-prose mb-7 mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
 						<Button
 							href="#calculator"
-							color="black"
-							class="min-h-14 w-full rounded-full px-7 text-lg shadow-xl shadow-sky-900/15 ring-4 ring-sky-200/70 hover:-translate-y-0.5 sm:w-auto"
+							color="white"
+							class="min-h-14 w-full rounded-full px-7 text-lg shadow-xl shadow-black/25 hover:-translate-y-0.5 sm:w-auto"
 						>
-							Start My Quote
-							<span aria-hidden="true" class="ml-3 text-2xl leading-none">&darr;</span>
+							Price my keys
+							<span aria-hidden="true" class="ml-3 text-xl leading-none">→</span>
 						</Button>
-						<p class="text-sm font-semibold text-slate-600">Search your key and see the payout below.</p>
+						<a href="#how-it-works" class="text-sm font-semibold text-slate-300 underline decoration-white/30 underline-offset-4 hover:text-white">
+							See how it works
+						</a>
 					</div>
-					<p>
-						Choose your vehicle make, find the key that matches what you have, and see your payout update as
-						you add keys to your quote.
-					</p>
+					<div class="not-prose flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-slate-300">
+						<span class="inline-flex items-center gap-2"><span class="text-sky-300">✓</span> Upfront estimates</span>
+						<span class="inline-flex items-center gap-2"><span class="text-sky-300">✓</span> Multiple keys welcome</span>
+						<span class="inline-flex items-center gap-2"><span class="text-sky-300">✓</span> Fast online quote</span>
+					</div>
 				</div>
 
-				<div class="grid grid-cols-1 gap-4 rounded-3xl bg-gray-900 p-6 text-white shadow-xl sm:grid-cols-3">
-					<div>
-						<p class="text-sm text-gray-300">Supported makes</p>
-						<p class="mt-2 text-4xl font-bold text-sky-300">{priceCatalogMakes.length}</p>
+				<div class="relative lg:-mr-16">
+					<div class="overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 shadow-2xl shadow-black/40">
+						<Image
+							src={heroKeys}
+							alt="A selection of modern car key fobs ready to be quoted and shipped"
+							width={1776}
+							height={887}
+							quality={88}
+							class="aspect-[4/3] w-full object-cover lg:aspect-[1.25/1]"
+						/>
 					</div>
-					<div>
-						<p class="text-sm text-gray-300">SKU items</p>
-						<p class="mt-2 text-4xl font-bold text-sky-300">{priceCatalog.length}</p>
-					</div>
-					<div>
-						<p class="text-sm text-gray-300">Highest payout</p>
-						<p class="mt-2 text-4xl font-bold text-sky-300">$60</p>
+					<div class="absolute -bottom-5 left-5 right-5 grid grid-cols-3 divide-x divide-slate-200 rounded-2xl bg-white p-4 text-gray-900 shadow-2xl sm:left-8 sm:right-auto sm:min-w-[30rem] sm:p-5">
+						<div class="px-3 sm:px-5">
+							<p class="text-2xl font-black tracking-tight sm:text-3xl">{priceCatalogMakes.length}</p>
+							<p class="mt-1 text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 sm:text-xs">Makes</p>
+						</div>
+						<div class="px-3 sm:px-5">
+							<p class="text-2xl font-black tracking-tight sm:text-3xl">{priceCatalog.length}</p>
+							<p class="mt-1 text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 sm:text-xs">Keys listed</p>
+						</div>
+						<div class="px-3 sm:px-5">
+							<p class="text-2xl font-black tracking-tight text-sky-700 sm:text-3xl">$60</p>
+							<p class="mt-1 text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 sm:text-xs">Top payout</p>
+						</div>
 					</div>
 				</div>
 			</div>
 		</Container>
 	</Section>
 
-	<Section id="calculator" class:list={"scroll-mt-24 bg-white"}>
+	<Section id="calculator" class:list={"scroll-mt-24 bg-slate-50"}>
 		<Container>
 			<KeyQuoteBuilder />
 		</Container>
 	</Section>
 
-	<Section id="how-it-works" class:list={"bg-gray-50"}>
+	<Section id="how-it-works" class:list={"bg-white"}>
 		<Container>
 			<Heading class:list={"max-w-3xl"}>
-				<h2 slot="heading-title">How it works</h2>
+				<p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">Simple from start to finish</p>
+				<h2 slot="heading-title">Three steps. One straightforward quote.</h2>
 				<p slot="heading-content">
-					Getting a quote is simple. Search for your key, review the payout, and keep adding keys until your
-					quote is complete.
+					You identify the keys. We show you the numbers. Add everything to one organized quote.
 				</p>
 			</Heading>
 
-			<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-				<div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
-					<p class="text-sm font-semibold uppercase tracking-[0.15em] text-sky-700">1. Select</p>
-					<h3 class="mt-3 text-2xl font-bold">Find your key</h3>
+			<div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+				<div class="group rounded-[2rem] bg-slate-50 p-7 ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl">
+					<div class="flex size-12 items-center justify-center rounded-2xl bg-gray-900 text-xl font-black text-white">01</div>
+					<p class="mt-7 text-sm font-semibold uppercase tracking-[0.15em] text-sky-700">Search</p>
+					<h3 class="mt-2 text-2xl font-bold">Find your exact key</h3>
 					<p class="mt-3 text-gray-600">
-						Choose your make, search by SKU, FCC ID, or description, and select the key that matches what you
-						have.
+						Browse by vehicle make or search the SKU, FCC ID, or description printed on your key.
 					</p>
 				</div>
 
-				<div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
-					<p class="text-sm font-semibold uppercase tracking-[0.15em] text-sky-700">2. Price</p>
-					<h3 class="mt-3 text-2xl font-bold">Review your payout</h3>
+				<div class="group rounded-[2rem] bg-sky-50 p-7 ring-1 ring-sky-100 transition hover:-translate-y-1 hover:shadow-xl">
+					<div class="flex size-12 items-center justify-center rounded-2xl bg-sky-600 text-xl font-black text-white">02</div>
+					<p class="mt-7 text-sm font-semibold uppercase tracking-[0.15em] text-sky-700">Price</p>
+					<h3 class="mt-2 text-2xl font-bold">See your estimate</h3>
 					<p class="mt-3 text-gray-600">
-						Check the estimated payout, choose the condition if it applies, and set the quantity before adding
-						it to your quote.
+						Tell us the condition and quantity. Your estimated payout updates right on the page.
 					</p>
 				</div>
 
-				<div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
-					<p class="text-sm font-semibold uppercase tracking-[0.15em] text-sky-700">3. Track</p>
-					<h3 class="mt-3 text-2xl font-bold">Build your full quote</h3>
+				<div class="group rounded-[2rem] bg-slate-50 p-7 ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl">
+					<div class="flex size-12 items-center justify-center rounded-2xl bg-gray-900 text-xl font-black text-white">03</div>
+					<p class="mt-7 text-sm font-semibold uppercase tracking-[0.15em] text-sky-700">Submit</p>
+					<h3 class="mt-2 text-2xl font-bold">Send one tidy quote</h3>
 					<p class="mt-3 text-gray-600">
-						Keep adding keys to your quote cart and see the running total update as you go.
+						Add as many keys as you need, review the running total, and send the whole batch at once.
 					</p>
 				</div>
+			</div>
+
+			<div class="mt-8 flex flex-col items-start justify-between gap-6 rounded-[2rem] bg-gray-900 p-7 text-white sm:flex-row sm:items-center lg:p-9">
+				<div>
+					<p class="text-sm font-semibold uppercase tracking-[0.18em] text-sky-300">Ready when you are</p>
+					<h3 class="mt-2 text-2xl font-bold sm:text-3xl">See what your keys are worth.</h3>
+				</div>
+				<Button href="#calculator" color="white" class="min-h-13 w-full rounded-full px-6 sm:w-auto">
+					Start a quote <span aria-hidden="true" class="ml-2">↑</span>
+				</Button>
 			</div>
 		</Container>
 	</Section>

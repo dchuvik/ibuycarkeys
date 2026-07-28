@@ -423,11 +423,11 @@ export const getPriceCatalog = async () => {
 			.order("make", { ascending: true })
 			.order("sku", { ascending: true });
 
-		if (error || !data?.length) {
+		if (error) {
 			return defaultPriceCatalog;
 		}
 
-		return data.map((item) => mapSupabaseCatalogRow(item));
+		return (data ?? []).map((item) => mapSupabaseCatalogRow(item));
 	} catch {
 		return defaultPriceCatalog;
 	}
