@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { adminSessionCookieName, isValidAdminSessionToken } from "~/lib/adminAuth";
+import { isAdminAccount } from "~/lib/accountAuth";
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from "~/lib/supabaseAdmin";
 import { supabaseTables } from "~/lib/supabaseTables";
 
@@ -7,10 +7,8 @@ export const prerender = false;
 
 const validStatuses = new Set(["new", "replied"]);
 
-export const POST: APIRoute = async ({ cookies, request }) => {
-	const sessionToken = cookies.get(adminSessionCookieName)?.value;
-
-	if (!isValidAdminSessionToken(sessionToken)) {
+export const POST: APIRoute = async ({ cookies, request, url }) => {
+	if (!(await isAdminAccount(cookies, url.protocol === "https:"))) {
 		return new Response(JSON.stringify({ error: "Unauthorized", ok: false }), {
 			status: 401,
 			headers: { "Content-Type": "application/json" },

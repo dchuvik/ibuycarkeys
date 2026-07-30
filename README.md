@@ -40,6 +40,29 @@ To get started with HyperDrive, follow these steps:
     npm run build
     ```
 
+## Account and admin setup
+
+The site uses Supabase Auth for customer and admin accounts. Configure these server environment variables:
+
+```text
+SUPABASE_URL
+SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+```
+
+Apply the migrations in `supabase/migrations`, including
+`20260730_add_user_accounts_and_quote_ownership.sql`.
+
+Create the first admin as a normal account at `/register/`, then promote that account in the Supabase SQL Editor:
+
+```sql
+update public.profiles
+set role = 'admin', updated_at = now()
+where email = 'admin@example.com';
+```
+
+The admin can then sign in at `/admin/` with that account. `ADMIN_PASSWORD` is no longer used.
+
 ## 📂 Project Structure
 
 Inside of your HyperDrive project, you'll see the following folders and files:

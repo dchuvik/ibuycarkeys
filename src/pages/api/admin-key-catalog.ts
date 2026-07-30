@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import slugify from "slugify";
-import { adminSessionCookieName, isValidAdminSessionToken } from "~/lib/adminAuth";
+import { isAdminAccount } from "~/lib/accountAuth";
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from "~/lib/supabaseAdmin";
 import { defaultPriceCatalog } from "~/data/priceCatalog";
 
@@ -14,8 +14,6 @@ const jsonResponse = (body: Record<string, unknown>, status = 200) =>
 		status,
 		headers: { "Content-Type": "application/json" },
 	});
-
-const isAuthorized = (cookieValue?: string) => isValidAdminSessionToken(cookieValue);
 
 const parseNullableNumber = (value: FormDataEntryValue | string | null | undefined) => {
 	if (value === "" || value === null || value === undefined) {
@@ -78,8 +76,8 @@ const parsePayload = async (request: Request) => {
 	};
 };
 
-export const POST: APIRoute = async ({ cookies, request }) => {
-	if (!isAuthorized(cookies.get(adminSessionCookieName)?.value)) {
+export const POST: APIRoute = async ({ cookies, request, url }) => {
+	if (!(await isAdminAccount(cookies, url.protocol === "https:"))) {
 		return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
 	}
 

@@ -67,6 +67,12 @@ const pathname = rmTrailingSlash(Astro.url.pathname);
 								</div>
 							))
 						}
+						<a
+							href="/account/"
+							class={`border-b-2 transition border-transparent ${pathname.startsWith("/account") || pathname === "/login" || pathname === "/register" ? "font-bold" : "hover:border-gray-800 font-medium"}`}
+						>
+							My Quotes
+						</a>
 						<a href="/contact" class="button button-black ml-8">Contact</a>
 					</div>
 				</nav>

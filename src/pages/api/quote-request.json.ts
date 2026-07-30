@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from "~/lib/supabaseAdmin";
 import { supabaseTables } from "~/lib/supabaseTables";
+import { getAccountUser } from "~/lib/accountAuth";
 
 export const prerender = false;
 
@@ -16,7 +17,7 @@ type QuoteRequestItemPayload = {
 	lineTotal?: number;
 };
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ cookies, request, url }) => {
 	if (!isSupabaseAdminConfigured()) {
 		return new Response(JSON.stringify({ error: "Quote saving is not configured.", ok: false }), {
 			status: 500,
@@ -25,6 +26,7 @@ export const POST: APIRoute = async ({ request }) => {
 	}
 
 	const supabaseAdmin = getSupabaseAdmin();
+	const accountUser = await getAccountUser(cookies, url.protocol === "https:");
 	const formData = await request.formData();
 	const botField = getFieldValue(formData, "bot-field");
 
@@ -98,6 +100,7 @@ export const POST: APIRoute = async ({ request }) => {
 		client_timezone: clientTimezone || null,
 		client_utc_offset_minutes: clientUtcOffsetMinutes ? Number.parseInt(clientUtcOffsetMinutes, 10) : null,
 		status: "new",
+		user_id: accountUser?.id ?? null,
 		})
 		.select("id")
 		.single();
