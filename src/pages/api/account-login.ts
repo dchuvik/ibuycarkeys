@@ -6,6 +6,8 @@ export const prerender = false;
 
 const getEnv = (key: string) => globalThis.process?.env?.[key]?.trim() ?? import.meta.env[key]?.trim?.() ?? "";
 
+export const GET: APIRoute = ({ url }) => Response.redirect(new URL("/login/", url), 302);
+
 export const POST: APIRoute = async ({ cookies, request, url }) => {
 	const formData = await request.formData();
 	const email = formData.get("email")?.toString().trim().toLowerCase() ?? "";
@@ -27,4 +29,3 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 	setAccountSessionCookies(cookies, data.session, url.protocol === "https:");
 	return Response.redirect(new URL(returnTo, url), 302);
 };
-
