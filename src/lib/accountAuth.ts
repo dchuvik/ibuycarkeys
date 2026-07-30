@@ -23,6 +23,12 @@ const cookieOptions = (secure: boolean) => ({
 	secure,
 });
 
+export const createMutableRedirect = (location: string, status = 302) =>
+	new Response(null, {
+		status,
+		headers: new Headers({ Location: location }),
+	});
+
 export const setAccountSessionCookies = (
 	cookies: AstroCookies,
 	session: { access_token: string; refresh_token: string; expires_in?: number },
