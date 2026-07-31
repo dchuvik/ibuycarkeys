@@ -1,11 +1,40 @@
 ---
 import { getPriceCatalog } from "~/data/priceCatalog";
 import PriceCatalog from "../PriceCatalog.astro";
+import type { AccountProfile } from "~/lib/accountAuth";
 
 const priceCatalog = await getPriceCatalog();
+const { accountProfile = null, isSignedIn = false } = Astro.props as {
+	accountProfile?: AccountProfile | null;
+	isSignedIn?: boolean;
+};
 ---
 
-<section class="space-y-8">
+<section class="space-y-8" data-signed-in={isSignedIn ? "true" : "false"}>
+	<div
+		id="quote-auth-choice"
+		class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto bg-gray-950/70 p-4"
+		aria-hidden="true"
+	>
+		<div class="absolute inset-0" data-close-auth-choice></div>
+		<div class="relative z-10 w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl ring-1 ring-gray-200 sm:p-8">
+			<div class="flex items-start justify-between gap-4">
+				<div>
+					<p class="text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">Save and track your quote</p>
+					<h3 class="mt-2 text-2xl font-bold text-gray-950">How would you like to continue?</h3>
+					<p class="mt-2 text-sm leading-6 text-gray-600">Sign in to use your saved details, create an account to track this quote, or submit it as a guest.</p>
+				</div>
+				<button type="button" data-close-auth-choice class="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-gray-200 text-xl text-gray-500" aria-label="Close">&times;</button>
+			</div>
+			<div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<a href="/login/?returnTo=/%3FresumeQuote%3Dtrue%23calculator" class="button button-black min-h-12 rounded-full px-5">Sign in</a>
+				<a href="/register/?returnTo=/%3FresumeQuote%3Dtrue%23calculator" class="button button-white min-h-12 rounded-full border border-gray-300 px-5">Create account</a>
+				<button type="button" id="continue-as-guest" class="button button-yellow min-h-12 rounded-full px-5 sm:col-span-2">Continue as guest</button>
+			</div>
+			<p class="mt-4 text-center text-xs leading-5 text-gray-500">Guest quotes can be claimed later by creating an account with the same email address.</p>
+		</div>
+	</div>
+
 	<form
 		id="quote-request-form"
 		name="quote-cart"
@@ -40,11 +69,12 @@ const priceCatalog = await getPriceCatalog();
 			<input type="hidden" name="client_timezone" id="quote-request-client-timezone" />
 			<input type="hidden" name="client_utc_offset_minutes" id="quote-request-client-utc-offset" />
 			<input type="hidden" name="quote_items_json" id="quote-request-items-json" />
+			<input type="hidden" name="submission_mode" id="quote-submission-mode" value={isSignedIn ? "account" : ""} />
 
 			<div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
 				<div>
 					<label for="quote-request-name">Your name</label>
-					<input id="quote-request-name" name="customer_name" type="text" autocomplete="name" required />
+					<input id="quote-request-name" name="customer_name" type="text" autocomplete="name" value={accountProfile?.full_name ?? ""} required />
 				</div>
 				<div>
 					<label for="quote-request-email">Email address</label>
@@ -53,6 +83,8 @@ const priceCatalog = await getPriceCatalog();
 						name="customer_email"
 						type="email"
 						autocomplete="email"
+						value={accountProfile?.email ?? ""}
+						readonly={isSignedIn}
 						required
 					/>
 				</div>
@@ -65,6 +97,7 @@ const priceCatalog = await getPriceCatalog();
 						autocomplete="tel"
 						inputmode="tel"
 						placeholder="(555) 555-5555"
+						value={accountProfile?.phone_number ?? ""}
 						required
 					/>
 				</div>
@@ -76,12 +109,13 @@ const priceCatalog = await getPriceCatalog();
 						type="text"
 						autocomplete="street-address"
 						placeholder="Street address"
+						value={accountProfile?.mailing_address ?? ""}
 						required
 					/>
 				</div>
 				<div>
 					<label for="quote-request-city">City</label>
-					<input id="quote-request-city" name="customer_city" type="text" autocomplete="address-level2" required />
+					<input id="quote-request-city" name="customer_city" type="text" autocomplete="address-level2" value={accountProfile?.city ?? ""} required />
 				</div>
 				<div>
 					<label for="quote-request-state">State</label>
@@ -92,6 +126,7 @@ const priceCatalog = await getPriceCatalog();
 						autocomplete="address-level1"
 						maxlength="2"
 						placeholder="NY"
+						value={accountProfile?.state ?? ""}
 						required
 					/>
 				</div>
@@ -104,6 +139,7 @@ const priceCatalog = await getPriceCatalog();
 						autocomplete="postal-code"
 						inputmode="numeric"
 						placeholder="12345"
+						value={accountProfile?.zip_code ?? ""}
 						required
 					/>
 				</div>
@@ -352,6 +388,10 @@ const priceCatalog = await getPriceCatalog();
 		const sendQuoteStatus = document.getElementById("send-quote-status");
 		const clearCartButton = document.getElementById("clear-quote-cart");
 		const priceCatalogSection = document.getElementById("price-catalog");
+		const quoteBuilderSection = document.querySelector("[data-signed-in]");
+		const quoteAuthChoice = document.getElementById("quote-auth-choice");
+		const continueAsGuestButton = document.getElementById("continue-as-guest");
+		const closeAuthChoiceButtons = Array.from(document.querySelectorAll("[data-close-auth-choice]"));
 		const quoteRequestForm = document.getElementById("quote-request-form");
 		const quoteRequestName = document.getElementById("quote-request-name");
 		const quoteRequestEmail = document.getElementById("quote-request-email");
@@ -369,6 +409,7 @@ const priceCatalog = await getPriceCatalog();
 		const quoteRequestClientUtcOffset = document.getElementById("quote-request-client-utc-offset");
 		const quoteRequestStatus = document.getElementById("quote-request-status");
 		const quoteRequestItemsJson = document.getElementById("quote-request-items-json");
+		const quoteSubmissionMode = document.getElementById("quote-submission-mode");
 		const closeQuoteRequestButtons = Array.from(document.querySelectorAll("[data-close-quote-request]"));
 		const quoteCartFeedback = document.getElementById("quote-cart-feedback");
 		const quoteCartFeedbackToast = document.getElementById("quote-cart-feedback-toast");
@@ -402,6 +443,9 @@ const priceCatalog = await getPriceCatalog();
 				sendQuoteStatus instanceof HTMLElement &&
 				clearCartButton instanceof HTMLButtonElement &&
 				priceCatalogSection instanceof HTMLElement &&
+				quoteBuilderSection instanceof HTMLElement &&
+				quoteAuthChoice instanceof HTMLElement &&
+				continueAsGuestButton instanceof HTMLButtonElement &&
 				quoteRequestForm instanceof HTMLFormElement &&
 				quoteRequestName instanceof HTMLInputElement &&
 				quoteRequestEmail instanceof HTMLInputElement &&
@@ -419,6 +463,7 @@ const priceCatalog = await getPriceCatalog();
 				quoteRequestClientUtcOffset instanceof HTMLInputElement &&
 				quoteRequestStatus instanceof HTMLElement &&
 				quoteRequestItemsJson instanceof HTMLInputElement &&
+				quoteSubmissionMode instanceof HTMLInputElement &&
 				quoteCartFeedback instanceof HTMLElement &&
 				quoteCartFeedbackToast instanceof HTMLElement &&
 				quoteSubmissionToast instanceof HTMLElement
@@ -431,6 +476,20 @@ const priceCatalog = await getPriceCatalog();
 			quoteRequestForm.classList.remove("hidden");
 			quoteRequestForm.classList.add("flex");
 			document.body.classList.add("overflow-hidden");
+		};
+
+		const openAuthChoice = () => {
+			quoteAuthChoice.classList.remove("hidden");
+			quoteAuthChoice.classList.add("flex");
+			quoteAuthChoice.setAttribute("aria-hidden", "false");
+			document.body.classList.add("overflow-hidden");
+		};
+
+		const closeAuthChoice = () => {
+			quoteAuthChoice.classList.add("hidden");
+			quoteAuthChoice.classList.remove("flex");
+			quoteAuthChoice.setAttribute("aria-hidden", "true");
+			document.body.classList.remove("overflow-hidden");
 		};
 
 		const closeQuoteRequest = () => {
@@ -825,7 +884,7 @@ const priceCatalog = await getPriceCatalog();
 			sendQuoteStatus.textContent = "";
 		});
 
-		sendQuoteCartButton.addEventListener("click", () => {
+		const prepareQuoteRequest = () => {
 			const items = readCart();
 			if (!items.length) {
 				sendQuoteStatus.textContent = "Add at least one key to your quote before sending.";
@@ -857,7 +916,30 @@ const priceCatalog = await getPriceCatalog();
 			window.setTimeout(() => {
 				quoteRequestName.focus();
 			}, 50);
+		};
+
+		sendQuoteCartButton.addEventListener("click", () => {
+			if (!readCart().length) {
+				sendQuoteStatus.textContent = "Add at least one key to your quote before sending.";
+				return;
+			}
+
+			if (quoteBuilderSection.dataset.signedIn !== "true") {
+				openAuthChoice();
+				return;
+			}
+
+			quoteSubmissionMode.value = "account";
+			prepareQuoteRequest();
 		});
+
+		continueAsGuestButton.addEventListener("click", () => {
+			closeAuthChoice();
+			quoteSubmissionMode.value = "guest";
+			prepareQuoteRequest();
+		});
+
+		closeAuthChoiceButtons.forEach((button) => button.addEventListener("click", closeAuthChoice));
 
 		closeQuoteRequestButtons.forEach((button) => {
 			button.addEventListener("click", closeQuoteRequest);
@@ -939,6 +1021,10 @@ const priceCatalog = await getPriceCatalog();
 		});
 
 		document.addEventListener("keydown", (event) => {
+			if (event.key === "Escape" && quoteAuthChoice.classList.contains("flex")) {
+				closeAuthChoice();
+				return;
+			}
 			if (event.key === "Escape" && quoteRequestForm.classList.contains("flex")) {
 				closeQuoteRequest();
 			}
@@ -948,6 +1034,18 @@ const priceCatalog = await getPriceCatalog();
 		conditionField.value = "excellent";
 		updatePreview();
 		renderCart();
+
+		const resumeUrl = new URL(window.location.href);
+		if (
+			resumeUrl.searchParams.get("resumeQuote") === "true" &&
+			quoteBuilderSection.dataset.signedIn === "true" &&
+			readCart().length
+		) {
+			resumeUrl.searchParams.delete("resumeQuote");
+			history.replaceState(null, "", `${resumeUrl.pathname}${resumeUrl.search}${resumeUrl.hash}`);
+			quoteCartPanel.scrollIntoView({ block: "start", behavior: "smooth" });
+			window.setTimeout(prepareQuoteRequest, 450);
+		}
 	});
 </script>
 

@@ -2,11 +2,16 @@
 import { menuMain } from "~/data/menus";
 import IconLogo from "~/assets/images/icons/logo.svg";
 import { siteName, siteSlogan } from "~/data/config";
+import { getAccountProfile, getAccountUser } from "~/lib/accountAuth";
 const rmTrailingSlash = (path: string): string => {
 	return path.endsWith("/") && path.length > 1 ? path.slice(0, path.length - 1) : path;
 };
 
 const pathname = rmTrailingSlash(Astro.url.pathname);
+const accountUser = await getAccountUser(Astro.cookies, Astro.url.protocol === "https:");
+const accountProfile = accountUser ? await getAccountProfile(accountUser.id) : null;
+const firstName = accountProfile?.full_name?.trim().split(/\s+/)[0] ?? "";
+const accountMenuLabel = firstName ? `${firstName}'s Quotes` : "My Quotes";
 ---
 
 <header>
@@ -71,11 +76,68 @@ const pathname = rmTrailingSlash(Astro.url.pathname);
 							href="/account/"
 							class={`border-b-2 transition border-transparent ${pathname.startsWith("/account") || pathname === "/login" || pathname === "/register" ? "font-bold" : "hover:border-gray-800 font-medium"}`}
 						>
-							My Quotes
+							{accountMenuLabel}
 						</a>
 						<a href="/contact" class="button button-black ml-8">Contact</a>
 					</div>
 				</nav>
+
+				<details class="group relative lg:hidden">
+					<summary
+						class="flex size-12 cursor-pointer list-none items-center justify-center rounded-2xl bg-gray-900 text-white shadow-sm transition hover:bg-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 [&::-webkit-details-marker]:hidden"
+						aria-label="Open main menu"
+					>
+						<span class="sr-only">Menu</span>
+						<span class="relative block h-4 w-6" aria-hidden="true">
+							<span class="absolute left-0 top-0 h-0.5 w-6 bg-current transition group-open:top-[7px] group-open:rotate-45"></span>
+							<span class="absolute left-0 top-[7px] h-0.5 w-6 bg-current transition group-open:opacity-0"></span>
+							<span class="absolute bottom-0 left-0 h-0.5 w-6 bg-current transition group-open:bottom-[7px] group-open:-rotate-45"></span>
+						</span>
+					</summary>
+
+					<nav
+						class="absolute right-0 top-full z-50 mt-3 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl bg-white p-3 shadow-2xl ring-1 ring-gray-900/10"
+						aria-label="Mobile navigation"
+					>
+						<div class="flex flex-col">
+							{
+								menuMain.map((item) => (
+									<>
+										<a
+											href={item.url}
+											class={`rounded-xl px-4 py-3 text-base transition hover:bg-slate-100 ${
+												pathname === item.url ? "bg-slate-100 font-bold" : "font-semibold"
+											}`}
+										>
+											{item.label}
+										</a>
+										{item.submenu?.map((subItem) => (
+											<a
+												href={subItem.url}
+												class={`rounded-xl px-7 py-2.5 text-sm transition hover:bg-slate-100 ${
+													pathname === subItem.url ? "bg-slate-100 font-bold" : "font-medium text-gray-600"
+												}`}
+											>
+												{subItem.label}
+											</a>
+										))}
+									</>
+								))
+							}
+							<a
+								href="/account/"
+								class={`rounded-xl px-4 py-3 text-base transition hover:bg-slate-100 ${
+									pathname.startsWith("/account") || pathname === "/login" || pathname === "/register"
+										? "bg-slate-100 font-bold"
+										: "font-semibold"
+								}`}
+							>
+								{accountMenuLabel}
+							</a>
+							<a href="/contact" class="button button-black mt-2 rounded-xl">Contact</a>
+						</div>
+					</nav>
+				</details>
 			</div>
 		</div>
 	</section>

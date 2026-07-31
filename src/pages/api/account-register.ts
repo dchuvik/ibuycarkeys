@@ -11,8 +11,15 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 	const fullName = formData.get("fullName")?.toString().trim() ?? "";
 	const email = formData.get("email")?.toString().trim().toLowerCase() ?? "";
 	const password = formData.get("password")?.toString() ?? "";
+	const phoneNumber = formData.get("phoneNumber")?.toString().trim() ?? "";
+	const mailingAddress = formData.get("mailingAddress")?.toString().trim() ?? "";
+	const city = formData.get("city")?.toString().trim() ?? "";
+	const state = formData.get("state")?.toString().trim().toUpperCase() ?? "";
+	const zipCode = formData.get("zipCode")?.toString().trim() ?? "";
+	const requestedReturnTo = formData.get("returnTo")?.toString() ?? "/account/";
+	const returnTo = requestedReturnTo.startsWith("/") && !requestedReturnTo.startsWith("//") ? requestedReturnTo : "/account/";
 
-	if (!fullName || !email || password.length < 8) {
+	if (!fullName || !email || password.length < 8 || !phoneNumber || !mailingAddress || !city || state.length !== 2 || !/^\d{5}$/.test(zipCode)) {
 		return Response.redirect(new URL("/register/?error=invalid", url), 302);
 	}
 
@@ -23,8 +30,15 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 		email,
 		password,
 		options: {
-			data: { full_name: fullName },
-			emailRedirectTo: new URL("/login/?confirmed=true", url).toString(),
+			data: {
+				full_name: fullName,
+				phone_number: phoneNumber,
+				mailing_address: mailingAddress,
+				city,
+				state,
+				zip_code: zipCode,
+			},
+			emailRedirectTo: new URL(`/login/?confirmed=true&returnTo=${encodeURIComponent(returnTo)}`, url).toString(),
 		},
 	});
 
@@ -36,8 +50,8 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 
 	if (data.session) {
 		setAccountSessionCookies(cookies, data.session, url.protocol === "https:");
-		return createMutableRedirect("/account/");
+		return createMutableRedirect(returnTo);
 	}
 
-	return Response.redirect(new URL("/login/?registered=true", url), 302);
+	return Response.redirect(new URL(`/login/?registered=true&returnTo=${encodeURIComponent(returnTo)}`, url), 302);
 };

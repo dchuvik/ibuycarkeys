@@ -2,7 +2,6 @@ import type { APIRoute } from "astro";
 import slugify from "slugify";
 import { isAdminAccount } from "~/lib/accountAuth";
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from "~/lib/supabaseAdmin";
-import { defaultPriceCatalog } from "~/data/priceCatalog";
 
 export const prerender = false;
 
@@ -95,30 +94,6 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 	}
 
 	const action = parsedRequest.action;
-
-	if (action === "seed") {
-		const rows = defaultPriceCatalog.map((item) => ({
-			sku: item.sku,
-			make: item.make,
-			key_type: item.keyType,
-			description: item.description,
-			excellent_price: item.price,
-			light_scratches_price: item.lightScratchesPrice,
-			worn_price: item.wornPrice,
-			image_url: item.imageUrl,
-			inventory_count: item.inventoryCount,
-			max_order_quantity: item.maxOrderQuantity,
-			active: item.active,
-		}));
-
-		const { error } = await supabaseAdmin.from("key_catalog_items").upsert(rows, { onConflict: "sku" });
-
-		if (error) {
-			return jsonResponse({ ok: false, error: "Could not seed key catalog" }, 500);
-		}
-
-		return jsonResponse({ ok: true, seeded: rows.length });
-	}
 
 	const source = parsedRequest.kind === "formData" ? parsedRequest.formData : parsedRequest.json;
 	const getValue = (key: string) =>

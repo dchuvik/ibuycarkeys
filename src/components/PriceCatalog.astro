@@ -64,7 +64,7 @@ const priceCatalogMakes = [...new Set(priceCatalog.map((item) => item.make))].so
 		</div>
 	</div>
 
-	<div class:list={["mt-6 overflow-y-auto rounded-3xl border border-gray-200 bg-gray-50 p-3 pr-2", scrollClass]}>
+	<div class:list={["mt-6 overflow-y-auto rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-100 via-sky-50 to-gray-100 p-3 pr-2", scrollClass]}>
 		<div id="catalog-card-grid" class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xxxl:grid-cols-5">
 			{
 				priceCatalog.map((item) => (

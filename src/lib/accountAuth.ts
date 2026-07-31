@@ -83,6 +83,27 @@ export const getAccountRole = async (userId: string) => {
 	return data?.role === "admin" ? "admin" : "customer";
 };
 
+export type AccountProfile = {
+	id: string;
+	email: string;
+	full_name: string | null;
+	phone_number: string | null;
+	mailing_address: string | null;
+	city: string | null;
+	state: string | null;
+	zip_code: string | null;
+	role: "customer" | "admin";
+};
+
+export const getAccountProfile = async (userId: string): Promise<AccountProfile | null> => {
+	const { data } = await getSupabaseAdmin()
+		.from("profiles")
+		.select("id, email, full_name, phone_number, mailing_address, city, state, zip_code, role")
+		.eq("id", userId)
+		.maybeSingle();
+	return (data as AccountProfile | null) ?? null;
+};
+
 export const isAdminAccount = async (cookies: AstroCookies, secure = false) => {
 	const user = await getAccountUser(cookies, secure);
 	return Boolean(user && (await getAccountRole(user.id)) === "admin");

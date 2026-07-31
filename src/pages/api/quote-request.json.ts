@@ -38,7 +38,7 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 	}
 
 	const customerName = getFieldValue(formData, "customer_name");
-	const customerEmail = getFieldValue(formData, "customer_email");
+	const customerEmail = accountUser?.email?.trim().toLowerCase() || getFieldValue(formData, "customer_email");
 	const customerPhone = getFieldValue(formData, "customer_phone");
 	const customerAddress = getFieldValue(formData, "customer_address");
 	const customerCity = getFieldValue(formData, "customer_city");
@@ -52,6 +52,14 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 	const clientTimezone = getFieldValue(formData, "client_timezone");
 	const clientUtcOffsetMinutes = getFieldValue(formData, "client_utc_offset_minutes");
 	const quoteItemsJson = getFieldValue(formData, "quote_items_json");
+	const submissionMode = getFieldValue(formData, "submission_mode");
+
+	if (!accountUser && submissionMode !== "guest") {
+		return new Response(JSON.stringify({ error: "Choose sign in, create account, or continue as guest before submitting.", ok: false }), {
+			status: 409,
+			headers: { "Content-Type": "application/json" },
+		});
+	}
 
 	if (
 		!customerName ||
@@ -148,6 +156,22 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 				});
 			}
 		}
+	}
+
+	if (accountUser) {
+		await supabaseAdmin
+			.from("profiles")
+			.update({
+				email: customerEmail,
+				full_name: customerName,
+				phone_number: customerPhone,
+				mailing_address: customerAddress,
+				city: customerCity,
+				state: customerState.toUpperCase(),
+				zip_code: customerZip,
+				updated_at: new Date().toISOString(),
+			})
+			.eq("id", accountUser.id);
 	}
 
 	return new Response(JSON.stringify({ ok: true }), {

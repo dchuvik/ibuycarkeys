@@ -11,12 +11,14 @@ if (await getAccountUser(Astro.cookies, Astro.url.protocol === "https:")) {
 }
 
 const error = Astro.url.searchParams.get("error");
+const requestedReturnTo = Astro.url.searchParams.get("returnTo") ?? "/account/";
+const returnTo = requestedReturnTo.startsWith("/") && !requestedReturnTo.startsWith("//") ? requestedReturnTo : "/account/";
 ---
 
 <Layout pageTitle="Create account | I Buy Car Keys" title="Create account" description="Create an account to track your car key quotes." noindex={true}>
 	<Section class:list={"bg-gradient-to-br from-slate-100 via-white to-sky-50"}>
 		<Container>
-			<div class="mx-auto max-w-lg rounded-[2rem] bg-white p-7 shadow-xl ring-1 ring-gray-200 sm:p-10">
+			<div class="mx-auto max-w-2xl rounded-[2rem] bg-white p-7 shadow-xl ring-1 ring-gray-200 sm:p-10">
 				<p class="text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">Quote tracking</p>
 				<h1 class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">Create your account</h1>
 				<p class="mt-3 text-base text-gray-600">Keep all of your quote submissions and status updates in one place.</p>
@@ -27,8 +29,9 @@ const error = Astro.url.searchParams.get("error");
 					</p>
 				)}
 
-				<form method="POST" action="/api/account-register" class="mt-7 space-y-5">
-					<div>
+				<form method="POST" action="/api/account-register" class="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2">
+					<input type="hidden" name="returnTo" value={returnTo} />
+					<div class="sm:col-span-2">
 						<label for="register-name">Full name</label>
 						<input id="register-name" name="fullName" type="text" autocomplete="name" required />
 					</div>
@@ -37,11 +40,33 @@ const error = Astro.url.searchParams.get("error");
 						<input id="register-email" name="email" type="email" autocomplete="email" required />
 					</div>
 					<div>
+						<label for="register-phone">Phone number</label>
+						<input id="register-phone" name="phoneNumber" type="tel" autocomplete="tel" required />
+					</div>
+					<div class="sm:col-span-2">
+						<label for="register-address">Mailing address for payment</label>
+						<input id="register-address" name="mailingAddress" type="text" autocomplete="street-address" required />
+					</div>
+					<div>
+						<label for="register-city">City</label>
+						<input id="register-city" name="city" type="text" autocomplete="address-level2" required />
+					</div>
+					<div class="grid grid-cols-2 gap-4">
+						<div>
+							<label for="register-state">State</label>
+							<input id="register-state" name="state" type="text" autocomplete="address-level1" maxlength="2" placeholder="NY" required />
+						</div>
+						<div>
+							<label for="register-zip">ZIP code</label>
+							<input id="register-zip" name="zipCode" type="text" autocomplete="postal-code" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" required />
+						</div>
+					</div>
+					<div class="sm:col-span-2">
 						<label for="register-password">Password</label>
 						<input id="register-password" name="password" type="password" autocomplete="new-password" minlength="8" required />
 						<p class="mt-2 text-sm text-gray-500">Use at least 8 characters.</p>
 					</div>
-					<button type="submit" class="button button-black min-h-12 w-full rounded-full px-6">Create account</button>
+					<button type="submit" class="button button-black min-h-12 w-full rounded-full px-6 sm:col-span-2">Create account</button>
 				</form>
 
 				<p class="mt-6 text-center text-sm text-gray-600">
@@ -51,4 +76,3 @@ const error = Astro.url.searchParams.get("error");
 		</Container>
 	</Section>
 </Layout>
-

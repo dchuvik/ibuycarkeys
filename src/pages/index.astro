@@ -8,9 +8,12 @@ import Button from "~/components/Button.astro";
 import KeyQuoteBuilder from "~/components/forms/KeyQuoteBuilder.astro";
 import { getPriceCatalog, getPriceCatalogMakes } from "~/data/priceCatalog";
 import heroKeys from "~/assets/images/car-key-quote-hero.png";
+import { getAccountProfile, getAccountUser } from "~/lib/accountAuth";
 
 const priceCatalog = await getPriceCatalog();
 const priceCatalogMakes = await getPriceCatalogMakes();
+const accountUser = await getAccountUser(Astro.cookies, Astro.url.protocol === "https:");
+const accountProfile = accountUser ? await getAccountProfile(accountUser.id) : null;
 ---
 
 <Layout
@@ -85,7 +88,7 @@ const priceCatalogMakes = await getPriceCatalogMakes();
 
 	<Section id="calculator" class:list={"scroll-mt-24 bg-slate-50"}>
 		<Container>
-			<KeyQuoteBuilder />
+			<KeyQuoteBuilder accountProfile={accountProfile} isSignedIn={Boolean(accountUser)} />
 		</Container>
 	</Section>
 

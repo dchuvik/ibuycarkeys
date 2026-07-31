@@ -5,7 +5,6 @@ import Layout from "~/layouts/Layout.astro";
 import { getAccountRole, getAccountUser } from "~/lib/accountAuth";
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from "~/lib/supabaseAdmin";
 import { supabaseTables } from "~/lib/supabaseTables";
-import { defaultPriceCatalog } from "~/data/priceCatalog";
 
 export const prerender = false;
 
@@ -150,7 +149,6 @@ const contactStatusCounts = {
 	new: contacts.filter((contact) => (contact.status ?? "new") === "new").length,
 	replied: contacts.filter((contact) => contact.status === "replied").length,
 };
-const seedCatalogCount = defaultPriceCatalog.length;
 ---
 
 <Layout
@@ -732,10 +730,6 @@ const seedCatalogCount = defaultPriceCatalog.length;
 								</summary>
 
 								<div class="mt-6 space-y-6">
-									<div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
-										You can seed the original {seedCatalogCount} built-in keys once, then add new keys and upload an image for each catalog item here.
-									</div>
-
 									<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 										<div class="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_220px] lg:min-w-[52rem]">
 											<div>
@@ -757,9 +751,6 @@ const seedCatalogCount = defaultPriceCatalog.length;
 										<div class="flex flex-col gap-3 sm:flex-row">
 											<button type="button" id="open-new-key-panel" class="button button-black min-h-11 rounded-full px-5 text-sm">
 												Add New Key
-											</button>
-											<button type="button" id="seed-key-catalog" class="button button-yellow min-h-11 rounded-full px-5 text-sm">
-												Seed Catalog
 											</button>
 											<p id="key-catalog-status" class="self-center text-sm text-gray-600"></p>
 										</div>
@@ -883,7 +874,7 @@ const seedCatalogCount = defaultPriceCatalog.length;
 												))
 											) : (
 												<div class="rounded-[1.5rem] border border-gray-200 bg-white px-5 py-10 text-center text-sm text-gray-500">
-													The database catalog is empty. Use Seed Catalog to load the current built-in key list.
+											The database catalog is empty. Add a new key to get started.
 												</div>
 											)
 										}
@@ -1340,7 +1331,6 @@ const seedCatalogCount = defaultPriceCatalog.length;
 		const catalogEmptyState = document.getElementById("catalog-table-empty");
 		const catalogStatus = document.getElementById("key-catalog-status");
 		const newKeyCatalogForm = document.getElementById("new-key-catalog-form");
-		const seedKeyCatalogButton = document.getElementById("seed-key-catalog");
 		const keyCatalogForms = Array.from(document.querySelectorAll("[data-key-catalog-form]"));
 
 		if (
@@ -1374,8 +1364,7 @@ const seedCatalogCount = defaultPriceCatalog.length;
 				catalogResultsCount instanceof HTMLElement &&
 				catalogEmptyState instanceof HTMLElement &&
 				catalogStatus instanceof HTMLElement &&
-				newKeyCatalogForm instanceof HTMLFormElement &&
-				seedKeyCatalogButton instanceof HTMLButtonElement
+				newKeyCatalogForm instanceof HTMLFormElement
 			)
 		) {
 			return;
@@ -1618,18 +1607,6 @@ const seedCatalogCount = defaultPriceCatalog.length;
 
 			if (!response.ok) {
 				throw new Error("Could not update key catalog item.");
-			}
-		};
-
-		const seedKeyCatalog = async () => {
-			const response = await fetch("/api/admin-key-catalog", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ action: "seed" }),
-			});
-
-			if (!response.ok) {
-				throw new Error("Could not seed key catalog.");
 			}
 		};
 
@@ -2010,16 +1987,6 @@ const seedCatalogCount = defaultPriceCatalog.length;
 				closeNewKeyPanel();
 			} catch {
 				catalogStatus.textContent = "Could not create this key catalog item.";
-			}
-		});
-
-		seedKeyCatalogButton.addEventListener("click", async () => {
-			catalogStatus.textContent = "Seeding the key catalog...";
-			try {
-				await seedKeyCatalog();
-				catalogStatus.textContent = "Catalog seeded successfully. Refresh the page to see the imported items.";
-			} catch {
-				catalogStatus.textContent = "Could not seed the key catalog.";
 			}
 		});
 
