@@ -2,16 +2,15 @@
 import { menuMain } from "~/data/menus";
 import IconLogo from "~/assets/images/icons/logo.svg";
 import { siteName, siteSlogan } from "~/data/config";
-import { getAccountProfile, getAccountUser } from "~/lib/accountAuth";
+import { getAccountUser } from "~/lib/accountAuth";
 const rmTrailingSlash = (path: string): string => {
 	return path.endsWith("/") && path.length > 1 ? path.slice(0, path.length - 1) : path;
 };
 
 const pathname = rmTrailingSlash(Astro.url.pathname);
 const accountUser = await getAccountUser(Astro.cookies, Astro.url.protocol === "https:");
-const accountProfile = accountUser ? await getAccountProfile(accountUser.id) : null;
-const firstName = accountProfile?.full_name?.trim().split(/\s+/)[0] ?? "";
-const accountMenuLabel = firstName ? `${firstName}'s Quotes` : "My Quotes";
+const accountMenuLabel = accountUser ? "My Account" : "Sign in Account";
+const accountMenuHref = accountUser ? "/account/" : "/login/?returnTo=/account/";
 ---
 
 <header>
@@ -73,7 +72,7 @@ const accountMenuLabel = firstName ? `${firstName}'s Quotes` : "My Quotes";
 							))
 						}
 						<a
-							href="/account/"
+							href={accountMenuHref}
 							class={`border-b-2 transition border-transparent ${pathname.startsWith("/account") || pathname === "/login" || pathname === "/register" ? "font-bold" : "hover:border-gray-800 font-medium"}`}
 						>
 							{accountMenuLabel}
@@ -125,7 +124,7 @@ const accountMenuLabel = firstName ? `${firstName}'s Quotes` : "My Quotes";
 								))
 							}
 							<a
-								href="/account/"
+								href={accountMenuHref}
 								class={`rounded-xl px-4 py-3 text-base transition hover:bg-slate-100 ${
 									pathname.startsWith("/account") || pathname === "/login" || pathname === "/register"
 										? "bg-slate-100 font-bold"
