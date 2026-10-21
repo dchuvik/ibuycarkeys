@@ -234,14 +234,13 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 							<p class="text-xs font-semibold uppercase tracking-[0.15em] text-gray-500">Selected key</p>
 							<p id="quote-preview-sku" class="mt-2 text-lg font-bold text-gray-900">No key selected yet</p>
 							<p id="quote-preview-make" class="mt-1 text-sm font-semibold text-sky-800"></p>
-							<p id="quote-preview-inventory" class="mt-2 text-sm text-gray-600"></p>
 						</div>
 
 						<div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
 							<div id="price-condition-group">
 								<label id="price-condition-label" for="price-condition">Condition</label>
 								<select id="price-condition" name="condition">
-									<option value="excellent">Excellent</option>
+									<option value="excellent">No scratches</option>
 									<option value="light-scratches">Light scratches</option>
 									<option value="worn">Worn</option>
 								</select>
@@ -343,8 +342,6 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 								data-price={item.price}
 								data-light-scratches-price={item.lightScratchesPrice ?? ""}
 								data-worn-price={item.wornPrice ?? ""}
-								data-inventory-count={item.inventoryCount}
-								data-max-order-quantity={item.maxOrderQuantity}
 							>
 								{item.sku} | {item.description}
 							</option>
@@ -376,7 +373,6 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 		const quotePreviewDetail = document.getElementById("quote-preview-detail");
 		const quotePreviewSku = document.getElementById("quote-preview-sku");
 		const quotePreviewMake = document.getElementById("quote-preview-make");
-		const quotePreviewInventory = document.getElementById("quote-preview-inventory");
 		const cartList = document.getElementById("quote-cart-items");
 		const cartEmpty = document.getElementById("quote-cart-empty");
 		const cartCount = document.getElementById("quote-cart-count");
@@ -431,7 +427,6 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 				quotePreviewDetail instanceof HTMLElement &&
 				quotePreviewSku instanceof HTMLElement &&
 				quotePreviewMake instanceof HTMLElement &&
-				quotePreviewInventory instanceof HTMLElement &&
 				cartList instanceof HTMLElement &&
 				cartEmpty instanceof HTMLElement &&
 				cartCount instanceof HTMLElement &&
@@ -586,7 +581,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 		const formatConditionLabel = (value) => {
 			switch (value) {
 				case "excellent":
-					return "Excellent";
+					return "No scratches";
 				case "light-scratches":
 					return "Light scratches";
 				case "worn":
@@ -674,12 +669,8 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 				unitPrice,
 				lineTotal: unitPrice * quantity,
 				hasConditionPrice: lightScratchesPrice !== null || wornPrice !== null,
-				inventoryCount: Number(selected.dataset.inventoryCount ?? "0"),
-				maxOrderQuantity: Number(selected.dataset.maxOrderQuantity ?? "0"),
 			};
 		};
-
-		const getRemainingCapacity = (quote) => Math.max(0, quote.maxOrderQuantity - quote.inventoryCount);
 
 		const updatePreview = () => {
 			const current = getCurrentQuote();
@@ -693,27 +684,13 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 				quotePreviewDetail.textContent = "Select a key from the catalog above to see your estimated payout.";
 				quotePreviewSku.textContent = "No key selected yet";
 				quotePreviewMake.textContent = "";
-				quotePreviewInventory.textContent = "";
 				conditionHelp.textContent = "Choose the condition that best matches the key you are sending in.";
-				return;
-			}
-
-			const quantityLimit = getRemainingCapacity(current);
-			quantityField.max = String(quantityLimit || 0);
-
-			if (quantityLimit > 0 && current.quantity > quantityLimit) {
-				quantityField.value = String(quantityLimit);
-				updatePreview();
 				return;
 			}
 
 			quotePreviewTotal.textContent = currencyFormatter.format(current.lineTotal);
 			quotePreviewSku.textContent = current.sku;
 			quotePreviewMake.textContent = `${current.make} key`;
-			quotePreviewInventory.textContent =
-				quantityLimit > 0
-					? `${current.inventoryCount} on hand, accepting up to ${quantityLimit} more`
-					: "This key is not accepting more inventory right now";
 			quotePreviewDetail.textContent = `${current.quantity} x ${formatConditionLabel(
 				current.condition
 			)} price at ${currencyFormatter.format(current.unitPrice)} each`;
@@ -807,29 +784,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 				return;
 			}
 
-			const quantityLimit = getRemainingCapacity(current);
 			const existingItems = readCart();
-			const existingSkuQuantity = existingItems
-				.filter((item) => item.sku === current.sku)
-				.reduce((sum, item) => sum + item.quantity, 0);
-			const remainingForCart = Math.max(0, quantityLimit - existingSkuQuantity);
-
-			if (quantityLimit < 1) {
-				showQuoteCartFeedback(`${current.sku} is not accepting more inventory right now.`);
-				return;
-			}
-
-			if (remainingForCart < 1) {
-				showQuoteCartFeedback(`You already added the current accepted limit for ${current.sku}.`);
-				return;
-			}
-
-			if (current.quantity > remainingForCart) {
-				quantityField.value = String(remainingForCart);
-				updatePreview();
-				showQuoteCartFeedback(`You can add up to ${remainingForCart} more of ${current.sku} right now.`);
-				return;
-			}
 			const existingIndex = existingItems.findIndex(
 				(item) => item.sku === current.sku && item.condition === current.condition
 			);

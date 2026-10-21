@@ -129,6 +129,8 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 						headers: { "Content-Type": "application/json" },
 					});
 				}
+
+				inventoryBySku.set(item.sku, nextInventory);
 			}
 		}
 	}

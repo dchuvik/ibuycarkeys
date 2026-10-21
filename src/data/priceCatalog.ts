@@ -9,8 +9,6 @@ export interface PriceCatalogItem {
 	imageUrl: string | null;
 	make: string;
 	keyType: string | null;
-	inventoryCount: number;
-	maxOrderQuantity: number;
 	active: boolean;
 }
 
@@ -380,8 +378,6 @@ export const parseDefaultPriceCatalog = () =>
 				imageUrl: null,
 				make: makeByPrefix[prefix] ?? description.split(" ")[0],
 				keyType: null,
-				inventoryCount: 0,
-				maxOrderQuantity: 25,
 				active: true,
 			} satisfies PriceCatalogItem;
 		});
@@ -404,8 +400,6 @@ const mapSupabaseCatalogRow = (item: Record<string, unknown>): PriceCatalogItem 
 	imageUrl: item.image_url === null || item.image_url === undefined ? null : String(item.image_url),
 	make: String(item.make ?? ""),
 	keyType: item.key_type === null || item.key_type === undefined ? null : String(item.key_type),
-	inventoryCount: Number(item.inventory_count ?? 0),
-	maxOrderQuantity: Number(item.max_order_quantity ?? 0),
 	active: Boolean(item.active),
 });
 

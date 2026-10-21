@@ -107,7 +107,6 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 	const lightScratchesPrice = parseNullableNumber(getValue("lightScratchesPrice"));
 	const wornPrice = parseNullableNumber(getValue("wornPrice"));
 	const inventoryCount = parseRequiredNumber(getValue("inventoryCount"));
-	const maxOrderQuantity = parseRequiredNumber(getValue("maxOrderQuantity"), 25);
 	const activeValue = getValue("active");
 	const active = activeValue === true || activeValue === "true" || activeValue === "on";
 	const currentImageUrl = String(getValue("currentImageUrl") ?? "").trim();
@@ -144,8 +143,7 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 		Number.isNaN(excellentPrice) ||
 		(lightScratchesPrice !== null && Number.isNaN(lightScratchesPrice)) ||
 		(wornPrice !== null && Number.isNaN(wornPrice)) ||
-		Number.isNaN(inventoryCount) ||
-		Number.isNaN(maxOrderQuantity)
+		Number.isNaN(inventoryCount)
 	) {
 		return jsonResponse({ ok: false, error: "Invalid numeric values" }, 400);
 	}
@@ -177,7 +175,6 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 			worn_price: wornPrice,
 			image_url: finalImageUrl,
 			inventory_count: inventoryCount,
-			max_order_quantity: maxOrderQuantity,
 			active,
 		});
 
@@ -200,7 +197,6 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 			worn_price: wornPrice,
 			image_url: finalImageUrl,
 			inventory_count: inventoryCount,
-			max_order_quantity: maxOrderQuantity,
 			active,
 			updated_at: new Date().toISOString(),
 		})
