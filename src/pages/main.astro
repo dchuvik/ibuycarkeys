@@ -1,0 +1,15 @@
+---
+export const prerender = false;
+
+const searchParams = new URLSearchParams(Astro.url.search);
+// Bypass the browser's cached redirect from the bare homepage back to /main.
+searchParams.set("from", "main");
+
+return new Response(null, {
+	status: 302,
+	headers: {
+		Location: `/?${searchParams.toString()}`,
+		"Cache-Control": "no-store",
+	},
+});
+---
