@@ -1,5 +1,6 @@
 import { escapeHtml, getAdminEmail, sendEmail } from "~/lib/email";
 import { createQuoteInvoice, type QuoteInvoiceDetails } from "~/lib/quoteInvoice";
+import { quoteShippingAddress } from "~/lib/quoteShipping";
 
 type QuoteEmailStatus = "approved" | "rejected";
 
@@ -13,6 +14,7 @@ const buildApprovedEmail = (payload: QuoteEmailPayload) => {
 	const quoteReference = escapeHtml(payload.quoteReference);
 	const totalKeys = escapeHtml(payload.totalKeys || "-");
 	const quoteSummary = escapeHtml(payload.quoteSummary || "No quote summary provided.").replace(/\n/g, "<br />");
+	const shippingAddress = escapeHtml(quoteShippingAddress).replace(/\n/g, "<br />");
 
 	return {
 		subject: "Your car key quote has been accepted — Invoice attached",
@@ -20,6 +22,7 @@ const buildApprovedEmail = (payload: QuoteEmailPayload) => {
 			<p>Hi ${customerName},</p>
 			<p>Your quote has been accepted for <strong>${payout}</strong>.</p>
 			<p>Your PDF invoice is attached. Please print it and include it in your shipment so we can process your payout without delay.</p>
+			<p><strong>Ship to:</strong><br />${shippingAddress}</p>
 			<p><strong>Quote reference:</strong> #${quoteReference}<br /><strong>Total keys:</strong> ${totalKeys}</p>
 			<p><strong>Quote details:</strong></p>
 			<p>${quoteSummary}</p>
