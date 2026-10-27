@@ -1,15 +1,10 @@
 import { escapeHtml, getAdminEmail, sendEmail } from "~/lib/email";
+import { createQuoteInvoice, type QuoteInvoiceDetails } from "~/lib/quoteInvoice";
 
 type QuoteEmailStatus = "approved" | "rejected";
 
-type QuoteEmailPayload = {
+type QuoteEmailPayload = QuoteInvoiceDetails & {
 	status: QuoteEmailStatus;
-	customerName: string;
-	customerEmail: string;
-	estimatedPayout: string;
-	totalKeys: string;
-	quoteSummary: string;
-	quoteReference: string;
 };
 
 const buildApprovedEmail = (payload: QuoteEmailPayload) => {
@@ -20,11 +15,11 @@ const buildApprovedEmail = (payload: QuoteEmailPayload) => {
 	const quoteSummary = escapeHtml(payload.quoteSummary || "No quote summary provided.").replace(/\n/g, "<br />");
 
 	return {
-		subject: "Your car key quote has been accepted",
+		subject: "Your car key quote has been accepted — Invoice attached",
 		html: `
 			<p>Hi ${customerName},</p>
 			<p>Your quote has been accepted for <strong>${payout}</strong>.</p>
-			<p>Please include your quote reference in your shipment so we can process your payout without delay.</p>
+			<p>Your PDF invoice is attached. Please print it and include it in your shipment so we can process your payout without delay.</p>
 			<p><strong>Quote reference:</strong> #${quoteReference}<br /><strong>Total keys:</strong> ${totalKeys}</p>
 			<p><strong>Quote details:</strong></p>
 			<p>${quoteSummary}</p>
@@ -55,9 +50,20 @@ export const sendQuoteStatusEmail = async (payload: QuoteEmailPayload) => {
 	}
 
 	const email = payload.status === "approved" ? buildApprovedEmail(payload) : buildRejectedEmail(payload);
+	let attachments;
+	if (payload.status === "approved") {
+		try {
+			attachments = [createQuoteInvoice(payload)];
+		} catch {
+			return { sent: false, error: "Could not create the PDF invoice. Please try approving the quote again." };
+		}
+	}
+	const adminEmail = getAdminEmail();
 	return sendEmail({
 		to: payload.customerEmail,
-		bcc: getAdminEmail(),
+		bcc: adminEmail.toLowerCase() !== payload.customerEmail.toLowerCase() ? adminEmail : "",
+		replyTo: adminEmail,
+		attachments,
 		...email,
 	});
 };

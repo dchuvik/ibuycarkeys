@@ -23,7 +23,7 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 		});
 	}
 
-	let payload: { id?: string; status?: string } = {};
+	let payload: { id?: unknown; status?: unknown } = {};
 
 	try {
 		payload = await request.json();
@@ -34,8 +34,8 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 		});
 	}
 
-	const id = payload.id?.trim() ?? "";
-	const status = payload.status?.trim().toLowerCase() ?? "";
+	const id = typeof payload?.id === "string" ? payload.id.trim() : "";
+	const status = typeof payload?.status === "string" ? payload.status.trim().toLowerCase() : "";
 
 	if (!id || !validStatuses.has(status)) {
 		return new Response(JSON.stringify({ error: "Invalid quote id or status", ok: false }), {
@@ -50,7 +50,7 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 		error: currentQuoteError,
 	} = await supabaseAdmin
 		.from(supabaseTables.quoteRequests)
-		.select("id, status, customer_name, customer_email, total_keys, estimated_payout, quote_summary")
+		.select("id, status, customer_name, customer_email, customer_phone, customer_address, customer_city, customer_state, customer_zip, created_at, client_timezone, total_keys, estimated_payout, quote_summary")
 		.eq("id", id)
 		.maybeSingle();
 
@@ -163,6 +163,13 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 			status,
 			customerName: String(currentQuote.customer_name ?? ""),
 			customerEmail: String(currentQuote.customer_email ?? ""),
+			customerPhone: String(currentQuote.customer_phone ?? ""),
+			customerAddress: String(currentQuote.customer_address ?? ""),
+			customerCity: String(currentQuote.customer_city ?? ""),
+			customerState: String(currentQuote.customer_state ?? ""),
+			customerZip: String(currentQuote.customer_zip ?? ""),
+			createdAt: String(currentQuote.created_at ?? ""),
+			clientTimezone: String(currentQuote.client_timezone ?? ""),
 			estimatedPayout: String(currentQuote.estimated_payout ?? ""),
 			totalKeys: currentQuote.total_keys === null || currentQuote.total_keys === undefined ? "" : String(currentQuote.total_keys),
 			quoteSummary: String(currentQuote.quote_summary ?? ""),

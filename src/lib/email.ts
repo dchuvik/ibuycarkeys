@@ -8,6 +8,7 @@ type EmailPayload = {
 	bcc?: string;
 	replyTo?: string;
 	idempotencyKey?: string;
+	attachments?: Array<{ filename: string; content: string; content_type: string }>;
 };
 
 export const getAdminEmail = () => getSecret("ADMIN_EMAIL")?.trim() ?? "";
@@ -53,6 +54,7 @@ export const sendEmail = async (payload: EmailPayload) => {
 				subject: payload.subject,
 				html: payload.html,
 				...(payload.text ? { text: payload.text } : {}),
+				...(payload.attachments?.length ? { attachments: payload.attachments } : {}),
 			}),
 			signal: AbortSignal.timeout(10_000),
 		});

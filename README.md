@@ -66,6 +66,10 @@ The admin can then sign in at `/admin/` with that account. `ADMIN_PASSWORD` is n
 ## Quote status emails
 
 Approving or rejecting a quote saves its status and sends the customer an email through Resend.
+Approval automatically generates a PDF invoice on the server and attaches it to the email.
+The invoice includes the saved customer details, quote reference, payout, key count, and
+quote summary, with extra pages for long summaries. Rejection emails have no attachment.
+Both actions send directly from the admin without opening a mail app or downloading files.
 Configure these server environment variables:
 
 ```text

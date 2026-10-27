@@ -217,17 +217,10 @@ const contactStatusCounts = {
 							>
 								Copy email
 							</button>
-							<a
-								id="email-draft-open-mailto"
-								href="#"
-								class="button button-black inline-flex min-h-11 items-center justify-center rounded-full px-5 text-sm"
-							>
-								Open mail app
-							</a>
 							<button
 								type="button"
 								id="email-draft-send"
-								class="button button-black hidden min-h-11 rounded-full px-5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+								class="button button-black min-h-11 rounded-full px-5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
 							>
 								Send reply
 							</button>
@@ -522,8 +515,7 @@ const contactStatusCounts = {
 								</div>
 
 								<div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
-									Approve and Reject use your device's native email app. Approval also downloads a PDF invoice that the admin
-									should attach manually before sending.
+									Approve and Reject email the customer directly. Approval automatically attaches a PDF invoice.
 								</div>
 								<p id="quote-action-status" class="hidden rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-800 ring-1 ring-slate-200"></p>
 
@@ -655,17 +647,17 @@ const contactStatusCounts = {
 																		class="button button-black min-h-11 rounded-full px-5 text-sm"
 																		data-approve-quote
 																		data-quote-id={quote.id}
-																		data-customer-name={quote.customer_name}
-																		data-customer-email={quote.customer_email}
-																		data-customer-phone={quote.customer_phone}
-																		data-customer-address={quote.customer_address}
-																		data-customer-city={quote.customer_city}
-																		data-customer-state={quote.customer_state}
-																		data-customer-zip={quote.customer_zip}
-																		data-total-keys={quote.total_keys ?? ""}
-																		data-estimated-payout={quote.estimated_payout ?? ""}
-																		data-created-at={quote.created_at}
-																		data-quote-summary={quote.quote_summary}
+
+
+
+
+
+
+
+
+
+
+
 																		data-current-status={quote.status ?? "new"}
 																	>
 																		Approve
@@ -674,9 +666,9 @@ const contactStatusCounts = {
 																		type="button"
 																		class="button button-white min-h-11 rounded-full border border-gray-200 px-5 text-sm"
 																		data-reject-quote
-																		data-customer-name={quote.customer_name}
-																		data-customer-email={quote.customer_email}
-																		data-estimated-payout={quote.estimated_payout ?? ""}
+
+
+
 																		data-quote-id={quote.id}
 																		data-current-status={quote.status ?? "new"}
 																	>
@@ -999,8 +991,6 @@ const contactStatusCounts = {
 </Layout>
 
 <script>
-	import { jsPDF } from "jspdf";
-
 	document.addEventListener("astro:page-load", () => {
 		const adminTabs = Array.from(document.querySelectorAll("[data-admin-tab]"));
 		const adminPanels = Array.from(document.querySelectorAll("[data-admin-panel]"));
@@ -1079,7 +1069,6 @@ const contactStatusCounts = {
 		const emailDraftSubject = document.getElementById("email-draft-subject");
 		const emailDraftBody = document.getElementById("email-draft-body");
 		const emailDraftStatus = document.getElementById("email-draft-status");
-		const emailDraftOpenMailto = document.getElementById("email-draft-open-mailto");
 		const emailDraftSend = document.getElementById("email-draft-send");
 
 		const showQuoteActionStatus = (message, tone = "info") => {
@@ -1095,215 +1084,6 @@ const contactStatusCounts = {
 					: ["bg-slate-100", "text-slate-800", "ring-slate-200"])
 			);
 		};
-
-		const openQuoteEmailDraft = (draft) => {
-			if (
-				!(
-					emailDraftPanel instanceof HTMLElement &&
-					emailDraftTo instanceof HTMLElement &&
-					emailDraftSubject instanceof HTMLElement &&
-					emailDraftBody instanceof HTMLTextAreaElement &&
-					emailDraftStatus instanceof HTMLElement &&
-					emailDraftOpenMailto instanceof HTMLAnchorElement
-				)
-			) {
-				return;
-			}
-
-			emailDraftTo.textContent = draft.to;
-			emailDraftSubject.textContent = draft.subject;
-			emailDraftBody.value = draft.body;
-			emailDraftOpenMailto.href = draft.href;
-			emailDraftStatus.textContent = "";
-			emailDraftPanel.classList.remove("hidden");
-			emailDraftPanel.classList.add("flex");
-			document.body.classList.add("overflow-hidden");
-		};
-
-		const saveQuoteStatusFromButton = async (quoteId, status) => {
-			const response = await fetch("/api/admin-quote-status", {
-				method: "POST",
-				credentials: "same-origin",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ id: quoteId, status }),
-			});
-
-			if (!response.ok) {
-				let message = "Could not update quote status.";
-				try {
-					const payload = await response.json();
-					message = payload.error ?? message;
-				} catch {
-					// Keep the generic message if the server did not return JSON.
-				}
-				throw new Error(message);
-			}
-
-			return response.json();
-		};
-
-		const updateQuoteRowStatusFromButton = (button, status) => {
-			const row = button.closest("[data-quote-row]");
-			if (!(row instanceof HTMLElement)) {
-				return;
-			}
-
-			row.dataset.status = status;
-			const badge = row.querySelector("[data-quote-status-badge]");
-			if (badge instanceof HTMLElement) {
-				badge.textContent = status;
-				badge.className = "inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]";
-				badge.classList.add(
-					...(status === "approved"
-						? ["bg-emerald-100", "text-emerald-800"]
-						: status === "rejected"
-							? ["bg-rose-100", "text-rose-800"]
-							: ["bg-amber-100", "text-amber-800"])
-				);
-			}
-		};
-
-		const buildQuoteMailto = (button, status) => {
-			const customerEmail = button.dataset.customerEmail ?? "";
-			const customerName = button.dataset.customerName ?? "there";
-			const quoteId = button.dataset.quoteId?.slice(0, 8) ?? "";
-			const payout = button.dataset.estimatedPayout ?? "the approved amount";
-			const subject = status === "approved" ? "Your quote has been accepted - Invoice enclosed" : "Update on your car key quote";
-			const body =
-				status === "approved"
-					? [
-							`Hi ${customerName},`,
-							"",
-							`Your quote has been accepted for ${payout}. Attached is your invoice.`,
-							"Please include this invoice in your shipment to prevent delay in your payout.",
-							"",
-							`Quote reference: #${quoteId}`,
-							"",
-							"Thank you,",
-							"I Buy Car Keys",
-					  ].join("\n")
-					: [
-							`Hi ${customerName},`,
-							"",
-							"Thank you for sending your quote request. We are unable to accept this quote at this time.",
-							"",
-							`Quote reference: #${quoteId}`,
-							"",
-							"If you would like us to take another look, reply with any updated details or photos.",
-							"",
-							"Thank you,",
-							"I Buy Car Keys",
-					  ].join("\n");
-
-			return {
-				to: customerEmail,
-				subject,
-				body,
-				href: `mailto:${encodeURIComponent(customerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
-			};
-		};
-
-		const downloadQuoteInvoice = (button) => {
-			const doc = new jsPDF({ unit: "pt", format: "letter" });
-			const quoteId = button.dataset.quoteId?.slice(0, 8) ?? "QUOTE";
-			const customerName = button.dataset.customerName ?? "";
-			const customerEmail = button.dataset.customerEmail ?? "";
-			const customerPhone = button.dataset.customerPhone ?? "";
-			const address = button.dataset.customerAddress ?? "";
-			const city = button.dataset.customerCity ?? "";
-			const state = button.dataset.customerState ?? "";
-			const zip = button.dataset.customerZip ?? "";
-			const totalKeys = button.dataset.totalKeys ?? "";
-			const estimatedPayout = button.dataset.estimatedPayout ?? "";
-			const quoteSummary = button.dataset.quoteSummary ?? "";
-			let y = 56;
-
-			doc.setFont("helvetica", "bold");
-			doc.setFontSize(22);
-			doc.text("I Buy Car Keys", 48, y);
-			doc.setFontSize(12);
-			doc.setFont("helvetica", "normal");
-			y += 24;
-			doc.text("Quote Approval Invoice", 48, y);
-			y += 24;
-			doc.text(`Quote reference: #${quoteId}`, 48, y);
-			y += 16;
-			doc.text(`Approved payout: ${estimatedPayout || "Pending review"}`, 48, y);
-			y += 16;
-			doc.text(`Total keys: ${totalKeys || "-"}`, 48, y);
-			y += 28;
-			doc.setFont("helvetica", "bold");
-			doc.text("Customer", 48, y);
-			doc.setFont("helvetica", "normal");
-			y += 18;
-			doc.text(customerName, 48, y);
-			y += 16;
-			doc.text(customerEmail, 48, y);
-			y += 16;
-			doc.text(customerPhone, 48, y);
-			y += 16;
-			doc.text(`${address}, ${city}, ${state} ${zip}`.replace(/\s+,/g, ","), 48, y);
-			y += 28;
-			doc.setFont("helvetica", "bold");
-			doc.text("Quote Summary", 48, y);
-			doc.setFont("helvetica", "normal");
-			y += 18;
-			doc.text(doc.splitTextToSize(quoteSummary, 516), 48, y);
-			doc.save(`ibuycarkeys-invoice-${quoteId}.pdf`);
-		};
-
-		document.addEventListener(
-			"click",
-			async (event) => {
-				const target = event.target;
-				if (!(target instanceof Element)) {
-					return;
-				}
-
-				const button = target.closest("[data-approve-quote], [data-reject-quote], [data-mark-new-quote]");
-				if (!(button instanceof HTMLButtonElement)) {
-					return;
-				}
-
-				event.preventDefault();
-				event.stopPropagation();
-				const quoteId = button.dataset.quoteId ?? "";
-				const nextStatus = button.hasAttribute("data-approve-quote")
-					? "approved"
-					: button.hasAttribute("data-reject-quote")
-						? "rejected"
-						: "new";
-
-				try {
-					const result = await saveQuoteStatusFromButton(quoteId, nextStatus);
-					updateQuoteRowStatusFromButton(button, nextStatus);
-
-					if (nextStatus === "new") {
-						showQuoteActionStatus("Quote marked new.");
-						return;
-					}
-
-					if (result.emailSent) {
-						showQuoteActionStatus(`Quote marked ${nextStatus} and email sent.`);
-						return;
-					}
-
-					showQuoteActionStatus(
-						`Quote marked ${nextStatus}, but email was not sent: ${result.emailError || "Unknown email error"}`,
-						"error"
-					);
-				} catch (error) {
-					const message = `Could not mark quote ${nextStatus}: ${
-						error instanceof Error ? error.message : "Unknown error"
-					}`;
-					showQuoteActionStatus(message, "error");
-					if (emailDraftStatus instanceof HTMLElement) {
-						emailDraftStatus.textContent = message;
-					}
-				}
-			},
-			true
-		);
 
 		const searchInput = document.getElementById("quote-search");
 		const stateFilter = document.getElementById("quote-state-filter");
@@ -1354,7 +1134,6 @@ const contactStatusCounts = {
 				emailDraftBody instanceof HTMLTextAreaElement &&
 				emailDraftStatus instanceof HTMLElement &&
 				emailDraftCopy instanceof HTMLButtonElement &&
-				emailDraftOpenMailto instanceof HTMLAnchorElement &&
 				emailDraftSend instanceof HTMLButtonElement &&
 				newKeyPanel instanceof HTMLElement &&
 				newKeyClose instanceof HTMLElement &&
@@ -1380,7 +1159,6 @@ const contactStatusCounts = {
 			to: "",
 			subject: "",
 			body: "",
-			href: "",
 		};
 		let isSendingReply = false;
 		let replyTrigger: HTMLElement | null = null;
@@ -1469,12 +1247,6 @@ const contactStatusCounts = {
 			catalogEmptyState.classList.toggle("hidden", visibleRows > 0);
 		};
 
-		const wrapText = (doc, text, x, y, maxWidth, lineHeight) => {
-			const lines = doc.splitTextToSize(text, maxWidth);
-			doc.text(lines, x, y);
-			return y + lines.length * lineHeight;
-		};
-
 		const showEmailDraftPanel = (draft) => {
 			if (isSendingReply) {
 				return;
@@ -1485,9 +1257,6 @@ const contactStatusCounts = {
 			emailDraftSubject.textContent = draft.subject;
 			emailDraftBody.value = draft.body;
 			emailDraftBody.disabled = false;
-			emailDraftOpenMailto.href = draft.href;
-			emailDraftOpenMailto.classList.toggle("hidden", Boolean(draft.contactId));
-			emailDraftSend.classList.toggle("hidden", !draft.contactId);
 			emailDraftSend.disabled = false;
 			emailDraftSend.textContent = "Send reply";
 			emailDraftStatus.textContent = "";
@@ -1634,58 +1403,6 @@ const contactStatusCounts = {
 			}
 		};
 
-		const buildApproveMailto = (button) => {
-			const customerEmail = button.dataset.customerEmail ?? "";
-			const customerName = button.dataset.customerName ?? "there";
-			const quoteId = button.dataset.quoteId?.slice(0, 8) ?? "";
-			const payout = button.dataset.estimatedPayout ?? "the approved amount";
-			const subject = `Your quote has been accepted - Invoice enclosed`;
-			const body = [
-				`Hi ${customerName},`,
-				"",
-				`Your quote has been accepted for ${payout}. Attached is your invoice.`,
-				"Please include this invoice in your shipment to prevent delay in your payout.",
-				"",
-				`Quote reference: #${quoteId}`,
-				"",
-				"Thank you,",
-				"I Buy Car Keys",
-			].join("\n");
-
-			return {
-				to: customerEmail,
-				subject,
-				body,
-				href: `mailto:${encodeURIComponent(customerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
-			};
-		};
-
-		const buildRejectMailto = (button) => {
-			const customerEmail = button.dataset.customerEmail ?? "";
-			const customerName = button.dataset.customerName ?? "there";
-			const quoteId = button.dataset.quoteId?.slice(0, 8) ?? "";
-			const subject = "Update on your car key quote";
-			const body = [
-				`Hi ${customerName},`,
-				"",
-				`Thank you for sending your quote request. We are unable to accept this quote at this time.`,
-				"",
-				`Quote reference: #${quoteId}`,
-				"",
-				"If you would like us to take another look, reply with any updated details or photos.",
-				"",
-				"Thank you,",
-				"I Buy Car Keys",
-			].join("\n");
-
-			return {
-				to: customerEmail,
-				subject,
-				body,
-				href: `mailto:${encodeURIComponent(customerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
-			};
-		};
-
 		const buildContactReplyDraft = (button) => {
 			const customerEmail = button.dataset.contactEmail ?? "";
 			const subject = "Re: Your message to I Buy Car Keys";
@@ -1695,114 +1412,7 @@ const contactStatusCounts = {
 				to: customerEmail,
 				subject,
 				body: "",
-				href: "",
 			};
-		};
-
-		const downloadInvoicePdf = (button) => {
-			const doc = new jsPDF({
-				unit: "pt",
-				format: "letter",
-			});
-			const quoteId = button.dataset.quoteId?.slice(0, 8) ?? "QUOTE";
-			const customerName = button.dataset.customerName ?? "";
-			const customerEmail = button.dataset.customerEmail ?? "";
-			const customerPhone = button.dataset.customerPhone ?? "";
-			const address = button.dataset.customerAddress ?? "";
-			const city = button.dataset.customerCity ?? "";
-			const state = button.dataset.customerState ?? "";
-			const zip = button.dataset.customerZip ?? "";
-			const totalKeys = button.dataset.totalKeys ?? "";
-			const estimatedPayout = button.dataset.estimatedPayout ?? "";
-			const createdAt = button.dataset.createdAt ?? "";
-			const quoteSummary = button.dataset.quoteSummary ?? "";
-			const submittedLabel = createdAt
-				? new Intl.DateTimeFormat("en-US", {
-						dateStyle: "medium",
-						timeStyle: "short",
-				  }).format(new Date(createdAt))
-				: "";
-
-			let y = 56;
-
-			doc.setFont("helvetica", "bold");
-			doc.setFontSize(22);
-			doc.text("I Buy Car Keys", 48, y);
-
-			doc.setFontSize(12);
-			doc.setFont("helvetica", "normal");
-			y += 24;
-			doc.text("Quote Approval Invoice", 48, y);
-
-			doc.setDrawColor(226, 232, 240);
-			y += 18;
-			doc.line(48, y, 564, y);
-
-			y += 28;
-			doc.setFont("helvetica", "bold");
-			doc.text("Invoice Details", 48, y);
-			doc.setFont("helvetica", "normal");
-			y += 18;
-			doc.text(`Quote reference: #${quoteId}`, 48, y);
-			y += 16;
-			doc.text(`Submitted: ${submittedLabel}`, 48, y);
-			y += 16;
-			doc.text(`Approved payout: ${estimatedPayout || "Pending review"}`, 48, y);
-			y += 16;
-			doc.text(`Total keys: ${totalKeys || "-"}`, 48, y);
-
-			y += 28;
-			doc.setFont("helvetica", "bold");
-			doc.text("Customer", 48, y);
-			doc.setFont("helvetica", "normal");
-			y += 18;
-			doc.text(customerName, 48, y);
-			y += 16;
-			doc.text(customerEmail, 48, y);
-			y += 16;
-			doc.text(customerPhone, 48, y);
-			y += 16;
-			doc.text(`${address}, ${city}, ${state} ${zip}`.replace(/\s+,/g, ","), 48, y);
-
-			y += 28;
-			doc.setFont("helvetica", "bold");
-			doc.text("Shipment Note", 48, y);
-			doc.setFont("helvetica", "normal");
-			y += 18;
-			y = wrapText(
-				doc,
-				"Please include this invoice in your shipment to prevent delay in your payout.",
-				48,
-				y,
-				516,
-				16
-			);
-
-			y += 16;
-			doc.setFont("helvetica", "bold");
-			doc.text("Quote Summary", 48, y);
-			doc.setFont("helvetica", "normal");
-			y += 18;
-			wrapText(doc, quoteSummary, 48, y, 516, 16);
-
-			doc.save(`ibuycarkeys-invoice-${quoteId}.pdf`);
-		};
-
-		const openMailtoDraft = (href) => {
-			const openedWindow = window.open(href, "_blank", "noopener,noreferrer");
-
-			if (openedWindow) {
-				return;
-			}
-
-			const mailLink = document.createElement("a");
-			mailLink.href = href;
-			mailLink.target = "_blank";
-			mailLink.rel = "noopener noreferrer";
-			mailLink.style.display = "none";
-			document.body.appendChild(mailLink);
-			mailLink.click();
-			mailLink.remove();
 		};
 
 		searchInput.addEventListener("input", applyQuoteFilters);
@@ -1814,73 +1424,44 @@ const contactStatusCounts = {
 		catalogSearchInput.addEventListener("input", applyCatalogFilters);
 		catalogMakeFilter.addEventListener("change", applyCatalogFilters);
 
-		for (const button of approveButtons) {
-			if (!(button instanceof HTMLButtonElement)) {
-				continue;
-			}
-
+		const quoteActionButtons = [...approveButtons, ...rejectButtons, ...markNewButtons];
+		const pendingQuotes = new Set<string>();
+		for (const button of quoteActionButtons) {
+			if (!(button instanceof HTMLButtonElement)) continue;
 			button.addEventListener("click", async () => {
 				const quoteId = button.dataset.quoteId ?? "";
-				try {
-					const result = await saveQuoteStatus(quoteId, "approved");
-					updateQuoteRowStatus(quoteId, "approved");
-					showQuoteActionStatus(
-						result.emailSent
-							? "Quote marked approved and email sent."
-							: `Quote marked approved, but email was not sent: ${result.emailError || "Unknown email error"}`,
-						result.emailSent ? "info" : "error"
-					);
-				} catch (error) {
-					const message = `Quote could not be approved: ${
-						error instanceof Error ? error.message : "Unknown error"
-					}`;
-					showQuoteActionStatus(message, "error");
+				if (!quoteId || pendingQuotes.has(quoteId)) return;
+				const status = button.hasAttribute("data-approve-quote") ? "approved"
+					: button.hasAttribute("data-reject-quote") ? "rejected" : "new";
+				const relatedButtons = quoteActionButtons.filter((candidate) =>
+					candidate instanceof HTMLButtonElement && candidate.dataset.quoteId === quoteId);
+				pendingQuotes.add(quoteId);
+				for (const candidate of relatedButtons) {
+					if (candidate instanceof HTMLButtonElement) candidate.disabled = true;
 				}
-			});
-		}
-
-		for (const button of rejectButtons) {
-			if (!(button instanceof HTMLButtonElement)) {
-				continue;
-			}
-
-			button.addEventListener("click", async () => {
-				const quoteId = button.dataset.quoteId ?? "";
+				showQuoteActionStatus(status === "approved" ? "Approving quote and emailing the invoice?"
+					: status === "rejected" ? "Rejecting quote and emailing the customer?" : "Updating quote?");
 				try {
-					const result = await saveQuoteStatus(quoteId, "rejected");
-					updateQuoteRowStatus(quoteId, "rejected");
-					showQuoteActionStatus(
-						result.emailSent
-							? "Quote marked rejected and email sent."
-							: `Quote marked rejected, but email was not sent: ${result.emailError || "Unknown email error"}`,
-						result.emailSent ? "info" : "error"
-					);
+					const result = await saveQuoteStatus(quoteId, status);
+					updateQuoteRowStatus(quoteId, status);
+					if (status === "new") {
+						showQuoteActionStatus("Quote marked new.");
+					} else if (result.emailSent) {
+						showQuoteActionStatus(status === "approved"
+							? "Quote approved. Email sent with the PDF invoice attached."
+							: "Quote rejected and email sent.");
+					} else {
+						showQuoteActionStatus(
+							`Quote marked ${status}, but the email was not sent: ${result.emailError || "Unknown email error"}. Click ${status === "approved" ? "Approve" : "Reject"} again to retry.`,
+							"error");
+					}
 				} catch (error) {
-					const message = `Quote could not be rejected: ${
-						error instanceof Error ? error.message : "Unknown error"
-					}`;
-					showQuoteActionStatus(message, "error");
-				}
-			});
-		}
-
-		for (const button of markNewButtons) {
-			if (!(button instanceof HTMLButtonElement)) {
-				continue;
-			}
-
-			button.addEventListener("click", async () => {
-				const quoteId = button.dataset.quoteId ?? "";
-				try {
-					await saveQuoteStatus(quoteId, "new");
-					updateQuoteRowStatus(quoteId, "new");
-					showQuoteActionStatus("Quote marked new. It may move out of view if another status filter is active.");
-				} catch (error) {
-					const message = `Could not update this quote back to New: ${
-						error instanceof Error ? error.message : "Unknown error"
-					}`;
-					showQuoteActionStatus(message, "error");
-					window.alert(message);
+					showQuoteActionStatus(error instanceof Error ? error.message : "Could not update quote.", "error");
+				} finally {
+					pendingQuotes.delete(quoteId);
+					for (const candidate of relatedButtons) {
+						if (candidate instanceof HTMLButtonElement) candidate.disabled = false;
+					}
 				}
 			});
 		}
@@ -1893,7 +1474,6 @@ const contactStatusCounts = {
 
 		emailDraftCopy.addEventListener("click", async () => {
 			currentEmailDraft.body = emailDraftBody.value;
-			currentEmailDraft.href = `mailto:${encodeURIComponent(currentEmailDraft.to)}?subject=${encodeURIComponent(currentEmailDraft.subject)}&body=${encodeURIComponent(currentEmailDraft.body)}`;
 			const fullDraft = [`To: ${currentEmailDraft.to}`, `Subject: ${currentEmailDraft.subject}`, "", currentEmailDraft.body].join("\n");
 
 			try {
@@ -1902,13 +1482,6 @@ const contactStatusCounts = {
 			} catch {
 				emailDraftStatus.textContent = "Could not copy automatically. Select and copy the draft manually.";
 			}
-		});
-
-		emailDraftOpenMailto.addEventListener("click", (event) => {
-			event.preventDefault();
-			currentEmailDraft.body = emailDraftBody.value;
-			currentEmailDraft.href = `mailto:${encodeURIComponent(currentEmailDraft.to)}?subject=${encodeURIComponent(currentEmailDraft.subject)}&body=${encodeURIComponent(currentEmailDraft.body)}`;
-			openMailtoDraft(currentEmailDraft.href);
 		});
 
 		emailDraftSend.addEventListener("click", async () => {
