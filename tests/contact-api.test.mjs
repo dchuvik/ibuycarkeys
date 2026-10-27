@@ -136,6 +136,43 @@ test("honeypot and invalid submissions never send notifications", async () => {
 	assert.deepEqual(calls, []);
 });
 
+test("HTML and links in names and oversized identity fields never save or notify", async () => {
+	const { POST, calls } = await loadSubmission();
+	for (const values of [
+		{ "first-name": '* * * <a href="https://google.com">$3,222 deposit available</a> * * *' },
+		{ "last-name": "Visit https://spam.example" },
+		{ "first-name": "www.spam.example" },
+		{ "first-name": "First\nname" },
+		{ "last-name": "x".repeat(101) },
+		{ "first-name": "x".repeat(101) },
+		{ "phone-number": "1".repeat(51) },
+		{ email: "<bad>@example.com" },
+	]) {
+		assert.equal((await POST(contactRequest(values))).status, 400);
+	}
+	assert.deepEqual(calls, []);
+});
+
+test("international and punctuated names and links in genuine messages remain allowed", async () => {
+	const { POST, calls } = await loadSubmission();
+	const response = await POST(contactRequest({
+		"first-name": "María-José", "last-name": "O'Neill 王", "phone-number": "+1 (555) 010-1234 ext. 12",
+		message: "Can you quote this key? https://example.com/my-key",
+	}));
+	assert.equal(response.status, 200);
+	assert.deepEqual(calls, ["save", "notify"]);
+});
+
+test("malformed contact request bodies return a validation error without saving", async () => {
+	const { POST, calls } = await loadSubmission();
+	const response = await POST({ request: new Request("https://ibuycarkeys.com/api/contact-request.json", {
+		method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: "{}",
+	}) });
+	assert.equal(response.status, 400);
+	assert.equal((await response.json()).ok, false);
+	assert.deepEqual(calls, []);
+});
+
 test("a failed save does not send a contact alert", async () => {
 	const { POST, calls } = await loadSubmission({ saveError: {} });
 	assert.equal((await POST(contactRequest())).status, 500);

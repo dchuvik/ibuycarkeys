@@ -6,7 +6,14 @@ import { supabaseTables } from "~/lib/supabaseTables";
 
 export const prerender = false;
 
-const getFieldValue = (formData: FormData, fieldName: string) => formData.get(fieldName)?.toString().trim() ?? "";
+const getFieldValue = (formData: FormData, fieldName: string) => {
+	const value = formData.get(fieldName);
+	return typeof value === "string" ? value.trim() : "";
+};
+
+// Names may contain international characters and punctuation, but not markup or links.
+const isValidName = (value: string) =>
+	value.length <= 100 && !/[<>\u0000-\u001f\u007f]|https?:\/\/|www\./i.test(value);
 
 const createResponse = (request: Request, redirectPath: string, status: number, body: Record<string, string | boolean>) => {
 	const acceptsJson = request.headers.get("accept")?.includes("application/json");
@@ -22,7 +29,15 @@ const createResponse = (request: Request, redirectPath: string, status: number, 
 };
 
 export const POST: APIRoute = async ({ request }) => {
-	const formData = await request.formData();
+	let formData: FormData;
+	try {
+		formData = await request.formData();
+	} catch {
+		return createResponse(request, "/contact/?error=invalid-fields", 400, {
+			error: "Submit the contact form with valid text fields.",
+			ok: false,
+		});
+	}
 	const botField = getFieldValue(formData, "bot-field");
 
 	if (botField) {
@@ -44,9 +59,16 @@ export const POST: APIRoute = async ({ request }) => {
 		});
 	}
 
-	if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || message.length > 10_000) {
+	if (
+		!isValidName(firstName) ||
+		!isValidName(lastName) ||
+		phoneNumber.length > 50 ||
+		email.length > 254 ||
+		!/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(email) ||
+		message.length > 10_000
+	) {
 		return createResponse(request, "/contact/?error=invalid-fields", 400, {
-			error: "Enter a valid email address and a message of up to 10,000 characters.",
+			error: "Use names of up to 100 characters without HTML or links, a valid email address, a phone number of up to 50 characters, and a message of up to 10,000 characters.",
 			ok: false,
 		});
 	}
