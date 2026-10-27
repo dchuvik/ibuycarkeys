@@ -432,7 +432,7 @@ const contactStatusCounts = {
 							<div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
 								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
 									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">New orders</p>
-									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950">{quoteStatusCounts.new}</p>
+									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-gray-950" data-quote-status-count="new">{quoteStatusCounts.new}</p>
 								</div>
 								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
 									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">New messages</p>
@@ -440,11 +440,11 @@ const contactStatusCounts = {
 								</div>
 								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
 									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Approved quotes</p>
-									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-emerald-700">{quoteStatusCounts.approved}</p>
+									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-emerald-700" data-quote-status-count="approved">{quoteStatusCounts.approved}</p>
 								</div>
 								<div class="rounded-3xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-200">
 									<p class="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">Rejected quotes</p>
-									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-rose-700">{quoteStatusCounts.rejected}</p>
+									<p class="mt-3 text-4xl font-bold tracking-[-0.03em] text-rose-700" data-quote-status-count="rejected">{quoteStatusCounts.rejected}</p>
 								</div>
 							</div>
 
@@ -464,7 +464,7 @@ const contactStatusCounts = {
 									tabindex="0"
 								>
 									Quote form
-									<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{quotes.length}</span>
+									<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600" data-quote-count>{quotes.length}</span>
 								</button>
 								<button
 									type="button"
@@ -517,7 +517,7 @@ const contactStatusCounts = {
 								<div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
 									Approve and Reject email the customer directly. Approval automatically attaches a PDF invoice.
 								</div>
-								<p id="quote-action-status" class="hidden rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-800 ring-1 ring-slate-200"></p>
+								<p id="quote-action-status" role="status" aria-live="polite" class="hidden rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-800 ring-1 ring-slate-200"></p>
 
 								<div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_200px_200px_200px]">
 									<div>
@@ -560,8 +560,7 @@ const contactStatusCounts = {
 
 								<div class="space-y-4">
 									{
-										quotes.length ? (
-											quotes.map((quote) => (
+										quotes.map((quote) => (
 												<article
 													data-quote-row
 													data-state={quote.customer_state.toUpperCase()}
@@ -682,17 +681,21 @@ const contactStatusCounts = {
 																	>
 																		Mark New
 																	</button>
+																	<button
+																		type="button"
+																		class="button min-h-11 rounded-full bg-red-50 px-5 text-sm text-red-700 hover:bg-red-100 disabled:opacity-50"
+																		data-delete-quote
+																		data-quote-id={quote.id}
+																		aria-label={`Delete quote ${quote.id.slice(0, 8)} from ${quote.customer_name}`}
+																	>
+																		Delete
+																	</button>
 																</div>
 															</div>
 														</details>
 													</div>
 												</article>
-											))
-										) : (
-											<div class="rounded-[1.5rem] border border-gray-200 bg-white px-5 py-10 text-center text-sm text-gray-500">
-												No quote requests yet.
-											</div>
-										)
+										))
 									}
 
 									<p id="quote-table-empty" class="hidden rounded-[1.5rem] border border-gray-200 bg-white px-5 py-8 text-center text-sm text-gray-500">
@@ -1104,6 +1107,7 @@ const contactStatusCounts = {
 		const approveButtons = Array.from(document.querySelectorAll("[data-approve-quote]"));
 		const rejectButtons = Array.from(document.querySelectorAll("[data-reject-quote]"));
 		const markNewButtons = Array.from(document.querySelectorAll("[data-mark-new-quote]"));
+		const deleteQuoteButtons = Array.from(document.querySelectorAll("[data-delete-quote]"));
 		const replyContactButtons = Array.from(document.querySelectorAll("[data-reply-contact]"));
 		const markNewContactButtons = Array.from(document.querySelectorAll("[data-mark-new-contact]"));
 		const deleteContactButtons = Array.from(document.querySelectorAll("[data-delete-contact]"));
@@ -1184,11 +1188,16 @@ const contactStatusCounts = {
 			const selectedPayout = payoutFilter.value;
 			const selectedStatus = statusFilter.value;
 			let visibleRows = 0;
+			let totalRows = 0;
+			const statusCounts = new Map<string, number>([["new", 0], ["approved", 0], ["rejected", 0]]);
 
 			for (const row of quoteRows) {
-				if (!(row instanceof HTMLElement)) {
+				if (!(row instanceof HTMLElement) || !row.isConnected) {
 					continue;
 				}
+				totalRows += 1;
+				const rowStatus = row.dataset.status ?? "new";
+				statusCounts.set(rowStatus, (statusCounts.get(rowStatus) ?? 0) + 1);
 
 				const matchesSearch = !searchValue || (row.dataset.search ?? "").includes(searchValue);
 				const matchesState = selectedState === "all" || row.dataset.state === selectedState;
@@ -1208,6 +1217,11 @@ const contactStatusCounts = {
 			}
 
 			quoteResultsCount.textContent = String(visibleRows);
+			document.querySelectorAll("[data-quote-count]").forEach((counter) => { counter.textContent = String(totalRows); });
+			document.querySelectorAll("[data-quote-status-count]").forEach((counter) => {
+				counter.textContent = String(statusCounts.get(counter.getAttribute("data-quote-status-count") ?? "") ?? 0);
+			});
+			quoteEmptyState.textContent = totalRows === 0 ? "No quote requests yet." : "No quote orders match your current filters.";
 			quoteEmptyState.classList.toggle("hidden", visibleRows > 0);
 		};
 
@@ -1462,13 +1476,15 @@ const contactStatusCounts = {
 		catalogSearchInput.addEventListener("input", applyCatalogFilters);
 		catalogMakeFilter.addEventListener("change", applyCatalogFilters);
 
-		const quoteActionButtons = [...approveButtons, ...rejectButtons, ...markNewButtons];
+		const quoteActionButtons = [...approveButtons, ...rejectButtons, ...markNewButtons, ...deleteQuoteButtons];
 		const pendingQuotes = new Set<string>();
 		for (const button of quoteActionButtons) {
 			if (!(button instanceof HTMLButtonElement)) continue;
 			button.addEventListener("click", async () => {
 				const quoteId = button.dataset.quoteId ?? "";
-				if (!quoteId || pendingQuotes.has(quoteId)) return;
+				if (!quoteId || button.disabled || pendingQuotes.has(quoteId)) return;
+				const isDeleting = button.hasAttribute("data-delete-quote");
+				if (isDeleting && !window.confirm("Permanently delete this quote and its items? This also removes it from the customer's quote history. Inventory counts will stay unchanged. This cannot be undone.")) return;
 				const status = button.hasAttribute("data-approve-quote") ? "approved"
 					: button.hasAttribute("data-reject-quote") ? "rejected" : "new";
 				const relatedButtons = quoteActionButtons.filter((candidate) =>
@@ -1477,9 +1493,27 @@ const contactStatusCounts = {
 				for (const candidate of relatedButtons) {
 					if (candidate instanceof HTMLButtonElement) candidate.disabled = true;
 				}
-				showQuoteActionStatus(status === "approved" ? "Approving quote and emailing the invoice?"
+				if (isDeleting) button.textContent = "Deleting...";
+				showQuoteActionStatus(isDeleting ? "Deleting quote..." : status === "approved" ? "Approving quote and emailing the invoice?"
 					: status === "rejected" ? "Rejecting quote and emailing the customer?" : "Updating quote?");
 				try {
+					if (isDeleting) {
+						const response = await fetch("/api/admin-quote-delete", {
+							method: "POST",
+							credentials: "same-origin",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ id: quoteId }),
+						});
+						const result = await response.json().catch(() => null);
+						if (!response.ok || !result?.ok || result.id !== quoteId) {
+							throw new Error(result?.error || "Could not delete this quote. Please try again.");
+						}
+						button.closest("[data-quote-row]")?.remove();
+						applyQuoteFilters();
+						showQuoteActionStatus("Quote deleted. Inventory counts are unchanged.");
+						searchInput.focus();
+						return;
+					}
 					const result = await saveQuoteStatus(quoteId, status);
 					updateQuoteRowStatus(quoteId, status);
 					if (status === "new") {
@@ -1494,8 +1528,9 @@ const contactStatusCounts = {
 							"error");
 					}
 				} catch (error) {
-					showQuoteActionStatus(error instanceof Error ? error.message : "Could not update quote.", "error");
+					showQuoteActionStatus(error instanceof Error ? error.message : isDeleting ? "Could not delete this quote. Please try again." : "Could not update quote.", "error");
 				} finally {
+					if (isDeleting) button.textContent = "Delete";
 					pendingQuotes.delete(quoteId);
 					for (const candidate of relatedButtons) {
 						if (candidate instanceof HTMLButtonElement) candidate.disabled = false;
