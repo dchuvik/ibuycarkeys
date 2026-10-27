@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import { jsPDF } from "jspdf";
+import { quoteShippingAddress } from "~/lib/quoteShipping";
 
 export type QuoteInvoiceDetails = {
 	quoteReference: string;
@@ -78,6 +79,9 @@ export const createQuoteInvoice = (quote: QuoteInvoiceDetails) => {
 	const address = [quote.customerAddress, quote.customerCity, quote.customerState, quote.customerZip]
 		.filter(Boolean).join(", ");
 	if (address) write(address);
+	y += 10;
+	write("Ship to:", 12, true);
+	write(quoteShippingAddress);
 	y += 10;
 	write("Shipment note", 12, true);
 	write("Please include this invoice in your shipment to prevent delay in your payout.");
