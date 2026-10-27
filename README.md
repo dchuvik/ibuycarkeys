@@ -118,6 +118,10 @@ key to avoid duplicates within its 24-hour window. If sending succeeds but savin
 fails, the admin shows a warning without claiming the email failed. No database migration
 is required for this integration.
 
+In **Admin > Contact form**, choose **Delete** on a message and confirm to permanently
+remove it. Only authenticated admins can delete messages. The list and counts update after
+the server confirms deletion; failed deletes leave the message available to retry.
+
 ## 📂 Project Structure
 
 Inside of your HyperDrive project, you'll see the following folders and files:
