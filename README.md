@@ -102,6 +102,11 @@ customer's address as Reply-To and a link to the admin dashboard. A notification
 does not discard the saved message; check the Netlify function logs for the failure reason.
 Contact alerts no longer use Netlify Forms notifications.
 
+The contact endpoint checks a hidden text honeypot and rejects HTML or links in names,
+names over 100 characters, and phone numbers over 50 characters before saving or emailing.
+International names and links in the message body are allowed. These checks reduce basic
+bot spam; they do not identify every marketing submission. Existing messages are retained.
+
 In **Admin > Contact form**, click **Reply**, enter your response, and choose **Send reply**.
 The server uses the saved contact's email address, includes the original message, and marks
 the message as **replied** only after Resend accepts the email. Opening or closing the draft

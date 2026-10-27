@@ -25,7 +25,10 @@ const hasError = Astro.url.searchParams.has("error");
 	action="/api/contact-request.json"
 	id="contact-form"
 >
-	<input type="hidden" name="bot-field" />
+	<div class="hidden" aria-hidden="true">
+		<label for="contact-bot-field">Leave this field empty</label>
+		<input type="text" name="bot-field" id="contact-bot-field" tabindex="-1" autocomplete="off" />
+	</div>
 	<input type="hidden" name="client_timezone" id="contact-client-timezone" />
 	<input type="hidden" name="client_utc_offset_minutes" id="contact-client-utc-offset" />
 
@@ -33,25 +36,25 @@ const hasError = Astro.url.searchParams.has("error");
 		<div>
 			<label for="first-name">First name</label>
 			<div>
-				<input type="text" name="first-name" id="first-name" autocomplete="given-name" required />
+				<input type="text" name="first-name" id="first-name" autocomplete="given-name" maxlength="100" required />
 			</div>
 		</div>
 		<div>
 			<label for="last-name">Last name</label>
 			<div>
-				<input type="text" name="last-name" id="last-name" autocomplete="family-name" required />
+				<input type="text" name="last-name" id="last-name" autocomplete="family-name" maxlength="100" required />
 			</div>
 		</div>
 		<div class="sm:col-span-2">
 			<label for="email">Email</label>
 			<div>
-				<input type="email" name="email" id="email" autocomplete="email" required />
+				<input type="email" name="email" id="email" autocomplete="email" maxlength="254" required />
 			</div>
 		</div>
 		<div class="sm:col-span-2">
 			<label for="phone-number">Phone number</label>
 			<div>
-				<input type="tel" name="phone-number" id="phone-number" autocomplete="tel" />
+				<input type="tel" name="phone-number" id="phone-number" autocomplete="tel" maxlength="50" />
 			</div>
 		</div>
 		<div class="sm:col-span-2">
