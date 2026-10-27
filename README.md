@@ -91,6 +91,12 @@ If email sending fails, the quote status remains saved. After fixing the email c
 click **Approve** or **Reject** again for the same quote to retry its email. Repeating the same
 status does not adjust inventory again.
 
+In **Admin > Quote form**, open **View order details**, choose **Delete**, and confirm to
+permanently remove the quote and its line items, including from the customer's quote history.
+Only authenticated admins can delete quotes. Deletion does not send an email or change
+catalog inventory, including for approved quotes. The list and status counts update after
+the server confirms deletion; failures leave the quote available to retry.
+
 ## Contact emails
 
 Contact emails use the same `RESEND_API_KEY` and `RESEND_FROM` settings as quote emails.
