@@ -5,7 +5,7 @@ import { supabaseTables } from "~/lib/supabaseTables";
 
 export const prerender = false;
 
-const validStatuses = new Set(["new", "replied"]);
+const validStatuses = new Set(["new"]);
 
 export const POST: APIRoute = async ({ cookies, request, url }) => {
 	if (!(await isAdminAccount(cookies, url.protocol === "https:"))) {
