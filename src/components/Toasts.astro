@@ -1,0 +1,38 @@
+---
+const { feedback = "" } = Astro.props;
+---
+
+{feedback && <span hidden data-toast-on-load data-toast-kind="success">{feedback}</span>}
+<section id="site-toasts" aria-label="Notifications" transition:persist="site-toasts">
+	<div id="site-toast-list"></div>
+	<p id="site-toast-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+	<p id="site-toast-alert" class="sr-only" role="alert" aria-live="assertive" aria-atomic="true"></p>
+</section>
+
+<style is:global>
+	#site-toasts { position: fixed; z-index: 100; top: calc(env(safe-area-inset-top, 0px) + 1rem); right: 1rem; width: min(26rem, calc(100vw - 2rem)); pointer-events: none; }
+	#site-toast-list { display: grid; gap: .75rem; max-height: calc(100dvh - 2rem); overflow-y: auto; padding: .25rem; }
+	.site-toast { --toast-color: #047857; display: flex; align-items: flex-start; gap: .75rem; padding: 1rem; color: #111827; background: #fff; border: 1px solid #e5e7eb; border-left: 4px solid var(--toast-color); border-radius: 1rem; box-shadow: 0 8px 30px #11182726; pointer-events: auto; animation: site-toast-in .16s ease-out; }
+	.site-toast[data-kind="error"] { --toast-color: #b91c1c; }
+	.site-toast[data-kind="warning"] { --toast-color: #92400e; }
+	.site-toast[data-kind="loading"], .site-toast[data-kind="info"] { --toast-color: #0369a1; }
+	.site-toast__icon { flex: none; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; margin-top: .1rem; border: 2px solid var(--toast-color); border-radius: 50%; color: var(--toast-color); font-size: .875rem; font-weight: 700; }
+	.site-toast[data-kind="loading"] .site-toast__icon { border-right-color: transparent; animation: site-toast-spin .8s linear infinite; }
+	.site-toast__content { flex: 1; min-width: 0; }
+	.site-toast__title { display: block; font-size: .875rem; line-height: 1.5; }
+	.site-toast__message { margin: .25rem 0 0; color: #374151; font-size: .875rem; line-height: 1.5; overflow-wrap: anywhere; }
+	.site-toast__close { display: grid; place-items: center; flex: none; width: 2rem; height: 2rem; margin: -.25rem -.25rem 0 0; border-radius: .5rem; color: #4b5563; font-size: 1.5rem; line-height: 1; cursor: pointer; }
+	.site-toast__close:hover { background: #f3f4f6; color: #111827; }
+	.site-toast__close:focus-visible { outline: 2px solid #0369a1; outline-offset: 2px; }
+	@keyframes site-toast-in { from { opacity: 0; transform: translateY(-.5rem); } to { opacity: 1; transform: translateY(0); } }
+	@keyframes site-toast-spin { to { transform: rotate(360deg); } }
+	@media (prefers-reduced-motion: reduce) { .site-toast, .site-toast[data-kind="loading"] .site-toast__icon { animation: none; } }
+</style>
+
+<script>
+	import { initializeToasts, restoreToastForms } from "~/lib/toast";
+	document.addEventListener("astro:page-load", initializeToasts);
+	window.addEventListener("pageshow", (event) => {
+		if (event.persisted) { restoreToastForms(); initializeToasts(); }
+	});
+</script>

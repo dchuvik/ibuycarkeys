@@ -64,7 +64,7 @@ const statusClass = (status?: string | null) =>
 					<div class="flex flex-col gap-3 sm:flex-row">
 						{role === "admin" && <a href="/admin/" class="button button-white min-h-11 rounded-full px-5 text-sm">Admin dashboard</a>}
 						<a href="/#calculator" class="button button-yellow min-h-11 rounded-full px-5 text-sm">Start another quote</a>
-						<form method="POST" action="/api/account-logout">
+						<form method="POST" action="/api/account-logout" data-progress-message="Signing you out...">
 							<button type="submit" class="button button-white min-h-11 w-full rounded-full px-5 text-sm">Sign out</button>
 						</form>
 					</div>
@@ -77,10 +77,10 @@ const statusClass = (status?: string | null) =>
 						<p class="mt-2 text-sm text-gray-600">These details will be used to prefill your future quote submissions.</p>
 					</div>
 
-					{profileUpdated && <p class="mt-5 rounded-2xl bg-emerald-50 p-4 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">Your information has been updated.</p>}
-					{profileError && <p class="mt-5 rounded-2xl bg-red-50 p-4 text-sm font-medium text-red-700 ring-1 ring-red-200">Please check every field and try again.</p>}
+					{profileUpdated && <p data-toast-on-load data-toast-kind="success" data-toast-params="profile" class="mt-5 rounded-2xl bg-emerald-50 p-4 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">Your information has been updated.</p>}
+					{profileError && <p data-toast-on-load data-toast-kind="error" data-toast-params="profile" class="mt-5 rounded-2xl bg-red-50 p-4 text-sm font-medium text-red-700 ring-1 ring-red-200">Please check every field and try again.</p>}
 
-					<form method="POST" action="/api/account-profile" class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
+					<form method="POST" action="/api/account-profile" data-progress-message="Saving your information..." class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
 						<label class="block sm:col-span-2">
 							<span class="text-sm font-semibold text-gray-800">Full name</span>
 							<input name="fullName" type="text" autocomplete="name" required value={profile?.full_name ?? ""} class="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-950" />

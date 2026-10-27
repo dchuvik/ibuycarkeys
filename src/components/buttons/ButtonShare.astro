@@ -76,6 +76,7 @@ const SocialUrls = {
 </div>
 
 <script>
+	import { showToast } from "~/lib/toast";
 	document.addEventListener("astro:page-load", function () {
 		const buttonSocialShare = document.getElementById("button-social-share")!;
 
@@ -105,9 +106,14 @@ const SocialUrls = {
 			}
 		});
 
-		buttonCopyLink.addEventListener("click", () => {
-			navigator.clipboard.writeText(window.location.href);
-			closeMenu();
+		buttonCopyLink.addEventListener("click", async () => {
+			try {
+				await navigator.clipboard.writeText(window.location.href);
+				showToast("Link copied to your clipboard.", { id: "copy-link" });
+				closeMenu();
+			} catch {
+				showToast("Could not copy the link. Copy the address from your browser instead.", { kind: "error", id: "copy-link" });
+			}
 		});
 
 		// Close the menu when clicking outside

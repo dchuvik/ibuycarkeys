@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@supabase/supabase-js";
 import { createMutableRedirect, setAccountSessionCookies } from "~/lib/accountAuth";
+import { setActionFeedback } from "~/lib/actionFeedback";
 
 export const prerender = false;
 
@@ -50,6 +51,7 @@ export const POST: APIRoute = async ({ cookies, request, url }) => {
 
 	if (data.session) {
 		setAccountSessionCookies(cookies, data.session, url.protocol === "https:");
+		setActionFeedback(cookies, "account-created", url.protocol === "https:");
 		return createMutableRedirect(returnTo);
 	}
 

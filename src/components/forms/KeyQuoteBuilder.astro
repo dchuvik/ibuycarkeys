@@ -176,25 +176,6 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 		</div>
 	</form>
 
-	<div
-		id="quote-submission-toast"
-		class="pointer-events-none fixed inset-x-4 bottom-4 z-50 hidden justify-center sm:inset-x-auto sm:right-6 sm:justify-end"
-	>
-		<div class="max-w-md rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-semibold text-white shadow-2xl ring-1 ring-emerald-500/40">
-			Your quote was submitted successfully.
-		</div>
-	</div>
-
-	<div
-		id="quote-cart-feedback-toast"
-		class="pointer-events-none fixed inset-x-4 bottom-4 z-50 hidden justify-center sm:inset-x-auto sm:right-6 sm:justify-end"
-	>
-		<div
-			id="quote-cart-feedback"
-			class="max-w-md rounded-2xl bg-gray-900 px-5 py-4 text-sm font-semibold text-white shadow-2xl ring-1 ring-gray-800/60"
-		></div>
-	</div>
-
 	<div class="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-gray-100 lg:p-8">
 		<div class="mb-6 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
 			<div class="max-w-3xl">
@@ -354,6 +335,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 </section>
 
 <script>
+	import { showToast } from "~/lib/toast";
 	document.addEventListener("astro:page-load", () => {
 		const storageKey = "key-quote-cart";
 		const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -377,7 +359,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 		const cartEmpty = document.getElementById("quote-cart-empty");
 		const cartCount = document.getElementById("quote-cart-count");
 		const cartTotal = document.getElementById("quote-cart-total");
-		const quoteCartPanel = cartList.closest(".rounded-3xl.bg-gray-900");
+		const quoteCartPanel = cartList?.closest(".rounded-3xl.bg-gray-900");
 		const addMoreKeysButton = document.getElementById("add-more-keys");
 		const resetButton = document.getElementById("reset-key-form");
 		const sendQuoteCartButton = document.getElementById("send-quote-cart");
@@ -407,11 +389,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 		const quoteRequestItemsJson = document.getElementById("quote-request-items-json");
 		const quoteSubmissionMode = document.getElementById("quote-submission-mode");
 		const closeQuoteRequestButtons = Array.from(document.querySelectorAll("[data-close-quote-request]"));
-		const quoteCartFeedback = document.getElementById("quote-cart-feedback");
-		const quoteCartFeedbackToast = document.getElementById("quote-cart-feedback-toast");
-		const quoteSubmissionToast = document.getElementById("quote-submission-toast");
-		let quoteCartFeedbackTimer = 0;
-		let quoteSubmissionToastTimer = 0;
+		let isSubmittingQuote = false;
 
 		if (
 			!(
@@ -458,10 +436,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 				quoteRequestClientUtcOffset instanceof HTMLInputElement &&
 				quoteRequestStatus instanceof HTMLElement &&
 				quoteRequestItemsJson instanceof HTMLInputElement &&
-				quoteSubmissionMode instanceof HTMLInputElement &&
-				quoteCartFeedback instanceof HTMLElement &&
-				quoteCartFeedbackToast instanceof HTMLElement &&
-				quoteSubmissionToast instanceof HTMLElement
+				quoteSubmissionMode instanceof HTMLInputElement
 			)
 		) {
 			return;
@@ -494,35 +469,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 			document.body.classList.remove("overflow-hidden");
 		};
 
-		const showQuoteCartFeedback = (message) => {
-			quoteCartFeedback.textContent = message;
-			quoteCartFeedbackToast.classList.remove("hidden");
-			quoteCartFeedbackToast.classList.add("flex");
-
-			if (quoteCartFeedbackTimer) {
-				window.clearTimeout(quoteCartFeedbackTimer);
-			}
-
-			quoteCartFeedbackTimer = window.setTimeout(() => {
-				quoteCartFeedbackToast.classList.add("hidden");
-				quoteCartFeedbackToast.classList.remove("flex");
-				quoteCartFeedback.textContent = "";
-			}, 3200);
-		};
-
-		const showQuoteSubmissionToast = () => {
-			quoteSubmissionToast.classList.remove("hidden");
-			quoteSubmissionToast.classList.add("flex");
-
-			if (quoteSubmissionToastTimer) {
-				window.clearTimeout(quoteSubmissionToastTimer);
-			}
-
-			quoteSubmissionToastTimer = window.setTimeout(() => {
-				quoteSubmissionToast.classList.add("hidden");
-				quoteSubmissionToast.classList.remove("flex");
-			}, 4200);
-		};
+		const showQuoteCartFeedback = (message: string) => showToast(message, { id: "quote-cart" });
 
 		const scrollToQuoteCartOnMobile = () => {
 			if (!window.matchMedia("(max-width: 1279px)").matches) {
@@ -575,7 +522,13 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 		};
 
 		const writeCart = (items) => {
-			localStorage.setItem(storageKey, JSON.stringify(items));
+			try {
+				localStorage.setItem(storageKey, JSON.stringify(items));
+				return true;
+			} catch {
+				showToast("Your quote cart could not be saved. Allow browser storage and try again.", { kind: "error", id: "quote-cart" });
+				return false;
+			}
 		};
 
 		const formatConditionLabel = (value) => {
@@ -745,8 +698,9 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 			cartList.querySelectorAll("[data-remove-id]").forEach((button) => {
 				button.addEventListener("click", () => {
 					const nextItems = readCart().filter((item) => item.id !== button.getAttribute("data-remove-id"));
-					writeCart(nextItems);
+					if (!writeCart(nextItems)) return;
 					renderCart();
+					showQuoteCartFeedback("Key removed from your quote cart.");
 				});
 			});
 		};
@@ -781,6 +735,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 
 			if (!current || current.quantity < 1) {
 				updatePreview();
+				showToast("Choose a key and a quantity of at least one before adding it.", { kind: "warning", id: "quote-cart" });
 				return;
 			}
 
@@ -811,7 +766,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 				];
 			}
 
-			writeCart(nextItems);
+			if (!writeCart(nextItems)) return;
 			renderCart();
 			quantityField.value = "1";
 			updatePreview();
@@ -834,15 +789,17 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 		});
 
 		clearCartButton.addEventListener("click", () => {
-			writeCart([]);
+			if (!writeCart([])) return;
 			renderCart();
 			sendQuoteStatus.textContent = "";
+			showQuoteCartFeedback("Your quote cart was cleared.");
 		});
 
 		const prepareQuoteRequest = () => {
 			const items = readCart();
 			if (!items.length) {
 				sendQuoteStatus.textContent = "Add at least one key to your quote before sending.";
+				showToast(sendQuoteStatus.textContent, { kind: "warning", id: "quote-submit" });
 				return;
 			}
 
@@ -876,6 +833,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 		sendQuoteCartButton.addEventListener("click", () => {
 			if (!readCart().length) {
 				sendQuoteStatus.textContent = "Add at least one key to your quote before sending.";
+				showToast(sendQuoteStatus.textContent, { kind: "warning", id: "quote-submit" });
 				return;
 			}
 
@@ -915,7 +873,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 		quoteRequestForm.addEventListener("submit", async (event) => {
 			event.preventDefault();
 
-			if (!quoteRequestForm.reportValidity()) {
+			if (isSubmittingQuote || !quoteRequestForm.reportValidity()) {
 				return;
 			}
 
@@ -932,7 +890,9 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 			}
 
 			submitButton.disabled = true;
+			isSubmittingQuote = true;
 			quoteRequestStatus.textContent = "Sending your quote...";
+			showToast(quoteRequestStatus.textContent, { kind: "loading", id: "quote-submit" });
 
 			try {
 				const response = await fetch("/api/quote-request.json", {
@@ -941,8 +901,9 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 					body: payload.toString(),
 				});
 
-				if (!response.ok) {
-					throw new Error("Submission failed");
+				const result = await response.json().catch(() => null);
+				if (!response.ok || !result?.ok) {
+					throw new Error(result?.error || "Your quote could not be sent right now. Please try again.");
 				}
 
 				sendQuoteStatus.textContent = "Your quote was sent successfully. We will reach out soon.";
@@ -965,12 +926,14 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 					client_utc_offset_minutes: quoteRequestClientUtcOffset.value,
 					admin_review_url: `${window.location.origin}/admin/`,
 				});
-				showQuoteSubmissionToast();
+				showToast("Your quote was submitted successfully. We will reach out soon.", { id: "quote-submit" });
 				quoteRequestForm.reset();
 				window.setTimeout(closeQuoteRequest, 900);
-			} catch {
-				quoteRequestStatus.textContent = "Your quote could not be sent right now. Please try again.";
+			} catch (error) {
+				quoteRequestStatus.textContent = error instanceof Error && !(error instanceof TypeError) ? error.message : "Your quote could not be sent right now. Please try again.";
+				showToast(quoteRequestStatus.textContent, { kind: "error", id: "quote-submit" });
 			} finally {
+				isSubmittingQuote = false;
 				submitButton.disabled = false;
 			}
 		});
