@@ -24,12 +24,12 @@ const returnTo = requestedReturnTo.startsWith("/") && !requestedReturnTo.startsW
 				<p class="mt-3 text-base text-gray-600">Keep all of your quote submissions and status updates in one place.</p>
 
 				{error && (
-					<p class="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+					<p data-toast-on-load data-toast-kind="error" data-toast-params="error" class="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
 						{error === "exists" ? "An account already exists for this email." : "We could not create the account. Check the fields and try again."}
 					</p>
 				)}
 
-				<form method="POST" action="/api/account-register" class="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2">
+				<form method="POST" action="/api/account-register" data-progress-message="Creating your account..." class="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2">
 					<input type="hidden" name="returnTo" value={returnTo} />
 					<div class="sm:col-span-2">
 						<label for="register-name">Full name</label>

@@ -207,7 +207,7 @@ const contactStatusCounts = {
 							</div>
 						</div>
 
-						<p id="email-draft-status" role="status" aria-live="polite" class="mt-4 text-sm text-emerald-700"></p>
+						<p id="email-draft-status" class="mt-4 text-sm text-emerald-700"></p>
 
 						<div class="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
 							<button
@@ -364,7 +364,7 @@ const contactStatusCounts = {
 
 							{
 								(loginError === "invalid" || accountUser) && (
-									<div class="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+									<div data-toast-on-load data-toast-kind="error" data-toast-params="error" class="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
 										{accountUser ? "This account does not have admin access." : "The email or password was incorrect."}
 									</div>
 								)
@@ -378,7 +378,7 @@ const contactStatusCounts = {
 								)
 							}
 
-							<form method="POST" action="/api/account-login" class="mt-6 space-y-4">
+							<form method="POST" action="/api/account-login" data-progress-message="Signing you in..." class="mt-6 space-y-4">
 								<input type="hidden" name="returnTo" value="/admin/" />
 								<div>
 									<label for="admin-email">Email address</label>
@@ -414,7 +414,7 @@ const contactStatusCounts = {
 										Showing the 100 most recent entries from each submission table.
 									</p>
 								</div>
-								<form method="POST" action="/api/account-logout">
+								<form method="POST" action="/api/account-logout" data-progress-message="Signing you out...">
 									<button type="submit" class="button button-white min-h-11 rounded-full border border-gray-200 px-5">
 										Log out
 									</button>
@@ -423,7 +423,7 @@ const contactStatusCounts = {
 
 							{
 								loadError && (
-									<div class="rounded-3xl border border-red-200 bg-red-50 px-6 py-5 text-sm text-red-700">
+									<div data-toast-on-load data-toast-kind="error" class="rounded-3xl border border-red-200 bg-red-50 px-6 py-5 text-sm text-red-700">
 										{loadError}
 									</div>
 								)
@@ -490,7 +490,7 @@ const contactStatusCounts = {
 									tabindex="-1"
 								>
 									Catalog admin
-									<span class="rounded-full bg-white/10 px-2 py-0.5 text-xs">{keyCatalogItems.length}</span>
+									<span class="rounded-full bg-white/10 px-2 py-0.5 text-xs" data-catalog-count>{keyCatalogItems.length}</span>
 								</button>
 							</nav>
 
@@ -517,7 +517,7 @@ const contactStatusCounts = {
 								<div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
 									Approve and Reject email the customer directly. Approval automatically attaches a PDF invoice.
 								</div>
-								<p id="quote-action-status" role="status" aria-live="polite" class="hidden rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-800 ring-1 ring-slate-200"></p>
+								<p id="quote-action-status" class="hidden rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-800 ring-1 ring-slate-200"></p>
 
 								<div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_200px_200px_200px]">
 									<div>
@@ -917,7 +917,7 @@ const contactStatusCounts = {
 									</div>
 								</div>
 
-								<p id="contact-action-status" role="status" aria-live="polite" class="mt-4 hidden rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-800"></p>
+								<p id="contact-action-status" class="mt-4 hidden rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-800"></p>
 								<div id="contact-list" class="mt-6 divide-y divide-gray-200 rounded-[1.5rem] border border-gray-200 bg-white">
 									{
 										contacts.length ? (
@@ -1004,6 +1004,7 @@ const contactStatusCounts = {
 </Layout>
 
 <script>
+	import { showToast, type ToastKind } from "~/lib/toast";
 	document.addEventListener("astro:page-load", () => {
 		const adminTabs = Array.from(document.querySelectorAll("[data-admin-tab]"));
 		const adminPanels = Array.from(document.querySelectorAll("[data-admin-panel]"));
@@ -1084,7 +1085,8 @@ const contactStatusCounts = {
 		const emailDraftStatus = document.getElementById("email-draft-status");
 		const emailDraftSend = document.getElementById("email-draft-send");
 
-		const showQuoteActionStatus = (message, tone = "info") => {
+		const showQuoteActionStatus = (message: string, tone: ToastKind = "success", id = "quote-action") => {
+			showToast(message, { kind: tone, id });
 			if (!(quoteActionStatus instanceof HTMLElement)) {
 				return;
 			}
@@ -1132,6 +1134,7 @@ const contactStatusCounts = {
 		const catalogStatus = document.getElementById("key-catalog-status");
 		const newKeyCatalogForm = document.getElementById("new-key-catalog-form");
 		const keyCatalogForms = Array.from(document.querySelectorAll("[data-key-catalog-form]"));
+		const pendingCatalogForms = new WeakSet<HTMLFormElement>();
 
 		if (
 			!(
@@ -1263,11 +1266,13 @@ const contactStatusCounts = {
 			const searchValue = catalogSearchInput.value.trim().toLowerCase();
 			const makeValue = catalogMakeFilter.value;
 			let visibleRows = 0;
+			let totalRows = 0;
 
 			for (const row of keyCatalogForms) {
-				if (!(row instanceof HTMLElement)) {
+				if (!(row instanceof HTMLElement) || !row.isConnected) {
 					continue;
 				}
+				totalRows += 1;
 
 				const matchesSearch = !searchValue || (row.dataset.search ?? "").includes(searchValue);
 				const matchesMake = makeValue === "all" || row.dataset.make === makeValue;
@@ -1280,6 +1285,7 @@ const contactStatusCounts = {
 			}
 
 			catalogResultsCount.textContent = String(visibleRows);
+			document.querySelectorAll("[data-catalog-count]").forEach((counter) => { counter.textContent = String(totalRows); });
 			catalogEmptyState.classList.toggle("hidden", visibleRows > 0);
 		};
 
@@ -1373,18 +1379,12 @@ const contactStatusCounts = {
 				body: JSON.stringify({ id: quoteId, status }),
 			});
 
-			if (!response.ok) {
-				let message = "Could not update quote status.";
-				try {
-					const payload = await response.json();
-					message = payload.error ?? message;
-				} catch {
-					// Keep the generic message if the server did not return JSON.
-				}
-				throw new Error(message);
+			const result = await response.json().catch(() => null);
+			if (!response.ok || !result?.ok) {
+				throw new Error(result?.error || "Could not update quote status. Please try again.");
 			}
 
-			return response.json();
+			return result;
 		};
 
 		const setContactStatusBadgeClass = (badge, status) => {
@@ -1422,7 +1422,8 @@ const contactStatusCounts = {
 			row?.querySelectorAll("button").forEach((button) => { button.disabled = pending; });
 		};
 
-		const showContactActionStatus = (message: string, isError = false) => {
+		const showContactActionStatus = (message: string, isError = false, id = "contact-action", kind: ToastKind = isError ? "error" : "success") => {
+			showToast(message, { kind, id });
 			const status = document.getElementById("contact-action-status");
 			if (!(status instanceof HTMLElement)) return;
 			status.textContent = message;
@@ -1438,7 +1439,8 @@ const contactStatusCounts = {
 				body: JSON.stringify({ id: contactId, status }),
 			});
 
-			if (!response.ok) {
+			const result = await response.json().catch(() => null);
+			if (!response.ok || !result?.ok) {
 				throw new Error("Could not update contact status.");
 			}
 		};
@@ -1450,9 +1452,15 @@ const contactStatusCounts = {
 				body: formData,
 			});
 
-			if (!response.ok) {
-				throw new Error("Could not update key catalog item.");
+			const result = await response.json().catch(() => null);
+			if (!response.ok || !result?.ok) {
+				throw new Error(result?.error || "Could not save this catalog item. Please try again.");
 			}
+		};
+
+		const showCatalogStatus = (message: string, kind: ToastKind = "success", id = "catalog-action") => {
+			catalogStatus.textContent = message;
+			showToast(message, { kind, id });
 		};
 
 		const buildContactReplyDraft = (button) => {
@@ -1483,6 +1491,7 @@ const contactStatusCounts = {
 			button.addEventListener("click", async () => {
 				const quoteId = button.dataset.quoteId ?? "";
 				if (!quoteId || button.disabled || pendingQuotes.has(quoteId)) return;
+				const notify = (message: string, kind: ToastKind = "success") => showQuoteActionStatus(message, kind, `quote-${quoteId}`);
 				const isDeleting = button.hasAttribute("data-delete-quote");
 				if (isDeleting && !window.confirm("Permanently delete this quote and its items? This also removes it from the customer's quote history. Inventory counts will stay unchanged. This cannot be undone.")) return;
 				const status = button.hasAttribute("data-approve-quote") ? "approved"
@@ -1494,8 +1503,8 @@ const contactStatusCounts = {
 					if (candidate instanceof HTMLButtonElement) candidate.disabled = true;
 				}
 				if (isDeleting) button.textContent = "Deleting...";
-				showQuoteActionStatus(isDeleting ? "Deleting quote..." : status === "approved" ? "Approving quote and emailing the invoice?"
-					: status === "rejected" ? "Rejecting quote and emailing the customer?" : "Updating quote?");
+				notify(isDeleting ? "Deleting quote..." : status === "approved" ? "Approving quote and emailing the invoice..."
+					: status === "rejected" ? "Rejecting quote and emailing the customer..." : "Updating quote...", "loading");
 				try {
 					if (isDeleting) {
 						const response = await fetch("/api/admin-quote-delete", {
@@ -1510,25 +1519,25 @@ const contactStatusCounts = {
 						}
 						button.closest("[data-quote-row]")?.remove();
 						applyQuoteFilters();
-						showQuoteActionStatus("Quote deleted. Inventory counts are unchanged.");
+						notify("Quote deleted. Inventory counts are unchanged.");
 						searchInput.focus();
 						return;
 					}
 					const result = await saveQuoteStatus(quoteId, status);
 					updateQuoteRowStatus(quoteId, status);
 					if (status === "new") {
-						showQuoteActionStatus("Quote marked new.");
+						notify("Quote marked new.");
 					} else if (result.emailSent) {
-						showQuoteActionStatus(status === "approved"
+						notify(status === "approved"
 							? "Quote approved. Email sent with the PDF invoice attached."
 							: "Quote rejected and email sent.");
 					} else {
-						showQuoteActionStatus(
+						notify(
 							`Quote marked ${status}, but the email was not sent: ${result.emailError || "Unknown email error"}. Click ${status === "approved" ? "Approve" : "Reject"} again to retry.`,
-							"error");
+							"warning");
 					}
 				} catch (error) {
-					showQuoteActionStatus(error instanceof Error ? error.message : isDeleting ? "Could not delete this quote. Please try again." : "Could not update quote.", "error");
+					notify(error instanceof Error ? error.message : isDeleting ? "Could not delete this quote. Please try again." : "Could not update quote.", "error");
 				} finally {
 					if (isDeleting) button.textContent = "Delete";
 					pendingQuotes.delete(quoteId);
@@ -1552,8 +1561,10 @@ const contactStatusCounts = {
 			try {
 				await navigator.clipboard.writeText(fullDraft);
 				emailDraftStatus.textContent = "Email draft copied to your clipboard.";
+				showToast(emailDraftStatus.textContent, { id: "copy-draft" });
 			} catch {
 				emailDraftStatus.textContent = "Could not copy automatically. Select and copy the draft manually.";
+				showToast(emailDraftStatus.textContent, { kind: "error", id: "copy-draft" });
 			}
 		});
 
@@ -1566,6 +1577,7 @@ const contactStatusCounts = {
 			emailDraftStatus.classList.add("text-emerald-700");
 			if (!message) {
 				emailDraftStatus.textContent = "Enter your reply before sending.";
+				showToast(emailDraftStatus.textContent, { kind: "warning", id: "contact-reply" });
 				emailDraftBody.focus();
 				return;
 			}
@@ -1577,6 +1589,7 @@ const contactStatusCounts = {
 			emailDraftBody.disabled = true;
 			emailDraftSend.textContent = "Sending…";
 			emailDraftStatus.textContent = "Sending your reply…";
+			showToast(emailDraftStatus.textContent, { kind: "loading", id: "contact-reply" });
 			try {
 				const response = await fetch("/api/admin-contact-reply", {
 					method: "POST",
@@ -1584,20 +1597,22 @@ const contactStatusCounts = {
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ id: contactId, message }),
 				});
-				const result = await response.json();
-				if (!response.ok || !result.emailSent) {
-					throw new Error(result.error || "Could not send your reply.");
+				const result = await response.json().catch(() => null);
+				if (!response.ok || !result?.emailSent) {
+					throw new Error(result?.error || "Could not send your reply. Please try again.");
 				}
 				if (result.status === "replied") {
 					updateContactRowStatus(contactId, "replied");
 				}
 				emailDraftSend.textContent = "Reply sent";
 				emailDraftStatus.textContent = result.warning || "Your reply was sent and the contact message is marked as replied.";
+				showToast(emailDraftStatus.textContent, { kind: result.warning ? "warning" : "success", id: "contact-reply" });
 				if (result.warning) {
 					emailDraftStatus.classList.replace("text-emerald-700", "text-red-700");
 				}
 			} catch (error) {
 				emailDraftStatus.textContent = error instanceof Error ? error.message : "Could not send your reply.";
+				showToast(emailDraftStatus.textContent, { kind: "error", id: "contact-reply" });
 				emailDraftStatus.classList.replace("text-emerald-700", "text-red-700");
 				emailDraftSend.disabled = false;
 				emailDraftBody.disabled = false;
@@ -1628,11 +1643,13 @@ const contactStatusCounts = {
 				const contactId = button.dataset.contactId ?? "";
 				if (!contactId || button.disabled || pendingContacts.has(contactId)) return;
 				setContactPending(contactId, true);
+				showContactActionStatus("Updating message...", false, `contact-${contactId}`, "loading");
 				try {
 					await saveContactStatus(contactId, "new");
 					updateContactRowStatus(contactId, "new");
+					showContactActionStatus("Contact message marked New.", false, `contact-${contactId}`);
 				} catch {
-					window.alert("Could not update this message back to New.");
+					showContactActionStatus("Could not update this message back to New.", true, `contact-${contactId}`);
 				} finally {
 					setContactPending(contactId, false);
 				}
@@ -1647,7 +1664,7 @@ const contactStatusCounts = {
 				if (!window.confirm("Permanently delete this contact message? This cannot be undone.")) return;
 				setContactPending(contactId, true);
 				button.textContent = "Deleting...";
-				showContactActionStatus("Deleting contact message...");
+				showContactActionStatus("Deleting contact message...", false, `contact-${contactId}`, "loading");
 				try {
 					const response = await fetch("/api/admin-contact-delete", {
 						method: "POST",
@@ -1668,10 +1685,10 @@ const contactStatusCounts = {
 					}
 					button.closest("[data-contact-row]")?.remove();
 					applyContactFilters();
-					showContactActionStatus("Contact message deleted.");
+					showContactActionStatus("Contact message deleted.", false, `contact-${contactId}`);
 					contactSearchInput.focus();
 				} catch (error) {
-					showContactActionStatus(error instanceof Error ? error.message : "Could not delete this message. Please try again.", true);
+					showContactActionStatus(error instanceof Error ? error.message : "Could not delete this message. Please try again.", true, `contact-${contactId}`);
 				} finally {
 					setContactPending(contactId, false);
 					button.textContent = "Delete";
@@ -1686,6 +1703,7 @@ const contactStatusCounts = {
 
 			form.addEventListener("submit", async (event) => {
 				event.preventDefault();
+				if (pendingCatalogForms.has(form)) return;
 				const submitEvent = event as SubmitEvent;
 				const submitter = submitEvent.submitter;
 				const actionInput = form.querySelector('input[name="action"]');
@@ -1693,7 +1711,7 @@ const contactStatusCounts = {
 				const sku = (new FormData(form).get("sku") ?? "").toString();
 
 				if (!(actionInput instanceof HTMLInputElement)) {
-					catalogStatus.textContent = "Could not submit this catalog item.";
+					showCatalogStatus("Could not submit this catalog item.", "error");
 					return;
 				}
 
@@ -1705,30 +1723,41 @@ const contactStatusCounts = {
 				}
 
 				actionInput.value = nextAction;
-				catalogStatus.textContent = nextAction === "delete" ? "Deleting catalog item..." : "Saving catalog item...";
+				pendingCatalogForms.add(form);
+				const buttons = Array.from(form.querySelectorAll("button"));
+				buttons.forEach((button) => { button.disabled = true; });
+				showCatalogStatus(nextAction === "delete" ? "Deleting catalog item..." : "Saving catalog item...", "loading", `catalog-${sku}`);
 				try {
 					await saveKeyCatalogItem(form);
-					catalogStatus.textContent =
-						nextAction === "delete" ? `${sku} was deleted. Refresh to update the list.` : `${sku} was updated.`;
-				} catch {
-					catalogStatus.textContent =
-						nextAction === "delete" ? "Could not delete this catalog item." : "Could not update this catalog item.";
+					if (nextAction === "delete") { form.remove(); applyCatalogFilters(); catalogSearchInput.focus(); }
+					showCatalogStatus(nextAction === "delete" ? `${sku} was deleted.` : `${sku} was updated.`, "success", `catalog-${sku}`);
+				} catch (error) {
+					showCatalogStatus(error instanceof Error ? error.message : "Could not save this catalog item. Please try again.", "error", `catalog-${sku}`);
 				} finally {
 					actionInput.value = "update";
+					pendingCatalogForms.delete(form);
+					buttons.forEach((button) => { button.disabled = false; });
 				}
 			});
 		}
 
 		newKeyCatalogForm.addEventListener("submit", async (event) => {
 			event.preventDefault();
-			catalogStatus.textContent = "Adding key to the catalog...";
+			if (pendingCatalogForms.has(newKeyCatalogForm)) return;
+			pendingCatalogForms.add(newKeyCatalogForm);
+			const buttons = Array.from(newKeyCatalogForm.querySelectorAll("button"));
+			buttons.forEach((button) => { button.disabled = true; });
+			showCatalogStatus("Adding key to the catalog...", "loading", "catalog-new");
 			try {
 				await saveKeyCatalogItem(newKeyCatalogForm);
-				catalogStatus.textContent = "New key created successfully. Refresh the page to see it in the catalog.";
+				showCatalogStatus("New key created successfully. Refresh the page to see it in the catalog.", "success", "catalog-new");
 				newKeyCatalogForm.reset();
 				closeNewKeyPanel();
-			} catch {
-				catalogStatus.textContent = "Could not create this key catalog item.";
+			} catch (error) {
+				showCatalogStatus(error instanceof Error ? error.message : "Could not create this key catalog item.", "error", "catalog-new");
+			} finally {
+				pendingCatalogForms.delete(newKeyCatalogForm);
+				buttons.forEach((button) => { button.disabled = false; });
 			}
 		});
 

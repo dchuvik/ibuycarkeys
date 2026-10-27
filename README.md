@@ -128,6 +128,15 @@ In **Admin > Contact form**, choose **Delete** on a message and confirm to perma
 remove it. Only authenticated admins can delete messages. The list and counts update after
 the server confirms deletion; failed deletes leave the message available to retry.
 
+## Action feedback
+
+The shared toast system in `src/lib/toast.ts` reports progress, success, warnings, and errors
+for admin actions, quote-cart changes and submissions, contact messages, account forms,
+and clipboard actions. Notifications remain visible over dialogs and across client-side
+navigation. Success notices dismiss after eight seconds, with the timer paused during
+hover or keyboard focus; warnings and errors remain until dismissed. Failed contact
+submissions retain the entered message for retry. Permanent deletions still require confirmation.
+
 ## 📂 Project Structure
 
 Inside of your HyperDrive project, you'll see the following folders and files:

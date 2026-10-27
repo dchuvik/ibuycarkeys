@@ -5,7 +5,7 @@ const hasError = Astro.url.searchParams.has("error");
 
 {
 	wasSubmitted && (
-		<div class="mb-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">
+		<div data-toast-on-load data-toast-kind="success" data-toast-params="submitted" class="mb-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">
 			Your message was sent successfully. We will get back to you soon.
 		</div>
 	)
@@ -13,7 +13,7 @@ const hasError = Astro.url.searchParams.has("error");
 
 {
 	hasError && (
-		<div class="mb-6 rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700 ring-1 ring-red-200">
+		<div data-toast-on-load data-toast-kind="error" data-toast-params="error" class="mb-6 rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700 ring-1 ring-red-200">
 			Your message could not be sent right now. Please try again.
 		</div>
 	)
@@ -68,8 +68,10 @@ const hasError = Astro.url.searchParams.has("error");
 		<button type="submit" class="button button-yellow">Send message</button>
 	</div>
 </form>
+<p id="contact-form-status" class="mt-4 text-sm text-gray-700"></p>
 
 <script>
+	import { showToast } from "~/lib/toast";
 	document.addEventListener("astro:page-load", () => {
 		const form = document.getElementById("contact-form");
 		const timezoneField = document.getElementById("contact-client-timezone");
@@ -96,6 +98,9 @@ const hasError = Astro.url.searchParams.has("error");
 				return;
 			}
 			isSubmitting = true;
+			showToast("Sending your message...", { kind: "loading", id: "contact-submit" });
+			const status = document.getElementById("contact-form-status");
+			if (status) status.textContent = "Sending your message...";
 			const submitButton = form.querySelector('button[type="submit"]');
 			if (submitButton instanceof HTMLButtonElement) {
 				submitButton.disabled = true;
@@ -119,13 +124,27 @@ const hasError = Astro.url.searchParams.has("error");
 					body: payload.toString(),
 				});
 
-				if (!response.ok) {
-					throw new Error("Submission failed");
+				const result = await response.json().catch(() => null);
+				if (!response.ok || !result?.ok) {
+					throw new Error(result?.error || "Your message could not be sent. Please try again.");
 				}
 
-				window.location.href = "/contact/?submitted=true";
-			} catch {
-				window.location.href = "/contact/?error=submit-failed";
+				const message = "Your message was sent successfully. We will get back to you soon.";
+				showToast(message, { id: "contact-submit" });
+				if (status) status.textContent = message;
+				form.reset();
+				timezoneField.value = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
+				utcOffsetField.value = String(new Date().getTimezoneOffset() * -1);
+			} catch (error) {
+				const message = error instanceof Error && !(error instanceof TypeError) ? error.message : "Your message could not be sent. Please try again.";
+				showToast(message, { kind: "error", id: "contact-submit" });
+				if (status) status.textContent = message;
+			} finally {
+				isSubmitting = false;
+				if (submitButton instanceof HTMLButtonElement) {
+					submitButton.disabled = false;
+					submitButton.textContent = "Send message";
+				}
 			}
 		});
 	});
