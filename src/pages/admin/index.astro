@@ -161,6 +161,9 @@ const contactStatusCounts = {
 			<div class="mx-auto max-w-7xl space-y-8">
 				<div
 					id="email-draft-panel"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="email-draft-title"
 					class="fixed inset-0 z-50 hidden items-start justify-center overflow-y-auto bg-gray-950/70 px-4 py-4 sm:items-center sm:p-4"
 				>
 					<div id="email-draft-close" class="absolute inset-0"></div>
@@ -168,9 +171,9 @@ const contactStatusCounts = {
 						<div class="flex items-start justify-between gap-4">
 							<div>
 								<p class="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700">Email draft</p>
-								<h2 class="mt-2 text-2xl font-bold text-gray-950">Review and send</h2>
+								<h2 id="email-draft-title" class="mt-2 text-2xl font-bold text-gray-950">Review and send</h2>
 								<p class="mt-2 text-sm leading-6 text-gray-600">
-									If your device does not open a native mail app, you can copy this draft and paste it into your email client.
+									Write your reply below, then choose Send reply. The contact will be marked as replied after your email is sent.
 								</p>
 							</div>
 							<button
@@ -193,16 +196,18 @@ const contactStatusCounts = {
 								<p id="email-draft-subject" class="mt-2 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-gray-800 ring-1 ring-gray-200"></p>
 							</div>
 							<div>
-								<p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Message</p>
+								<label for="email-draft-body" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Message</label>
 								<textarea
 									id="email-draft-body"
 									rows="10"
+									maxlength="10000"
+									placeholder="Type your reply here. Your greeting, signature, and the original message will be included automatically."
 									class="mt-2 min-h-56 w-full rounded-2xl bg-stone-50 px-4 py-4 text-sm leading-6 text-gray-800 ring-1 ring-gray-200"
 								></textarea>
 							</div>
 						</div>
 
-						<p id="email-draft-status" class="mt-4 text-sm text-emerald-700"></p>
+						<p id="email-draft-status" role="status" aria-live="polite" class="mt-4 text-sm text-emerald-700"></p>
 
 						<div class="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
 							<button
@@ -219,6 +224,13 @@ const contactStatusCounts = {
 							>
 								Open mail app
 							</a>
+							<button
+								type="button"
+								id="email-draft-send"
+								class="button button-black hidden min-h-11 rounded-full px-5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+							>
+								Send reply
+							</button>
 						</div>
 					</div>
 				</div>
@@ -1068,6 +1080,7 @@ const contactStatusCounts = {
 		const emailDraftBody = document.getElementById("email-draft-body");
 		const emailDraftStatus = document.getElementById("email-draft-status");
 		const emailDraftOpenMailto = document.getElementById("email-draft-open-mailto");
+		const emailDraftSend = document.getElementById("email-draft-send");
 
 		const showQuoteActionStatus = (message, tone = "info") => {
 			if (!(quoteActionStatus instanceof HTMLElement)) {
@@ -1342,6 +1355,7 @@ const contactStatusCounts = {
 				emailDraftStatus instanceof HTMLElement &&
 				emailDraftCopy instanceof HTMLButtonElement &&
 				emailDraftOpenMailto instanceof HTMLAnchorElement &&
+				emailDraftSend instanceof HTMLButtonElement &&
 				newKeyPanel instanceof HTMLElement &&
 				newKeyClose instanceof HTMLElement &&
 				newKeyCloseButton instanceof HTMLButtonElement &&
@@ -1362,11 +1376,14 @@ const contactStatusCounts = {
 		}
 
 		let currentEmailDraft = {
+			contactId: "",
 			to: "",
 			subject: "",
 			body: "",
 			href: "",
 		};
+		let isSendingReply = false;
+		let replyTrigger: HTMLElement | null = null;
 
 		statusFilter.value = "new";
 		contactStatusFilter.value = "new";
@@ -1459,22 +1476,38 @@ const contactStatusCounts = {
 		};
 
 		const showEmailDraftPanel = (draft) => {
+			if (isSendingReply) {
+				return;
+			}
+			replyTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			currentEmailDraft = draft;
 			emailDraftTo.textContent = draft.to;
 			emailDraftSubject.textContent = draft.subject;
 			emailDraftBody.value = draft.body;
+			emailDraftBody.disabled = false;
 			emailDraftOpenMailto.href = draft.href;
+			emailDraftOpenMailto.classList.toggle("hidden", Boolean(draft.contactId));
+			emailDraftSend.classList.toggle("hidden", !draft.contactId);
+			emailDraftSend.disabled = false;
+			emailDraftSend.textContent = "Send reply";
 			emailDraftStatus.textContent = "";
+			emailDraftStatus.classList.remove("text-red-700");
+			emailDraftStatus.classList.add("text-emerald-700");
 			emailDraftPanel.classList.remove("hidden");
 			emailDraftPanel.classList.add("flex");
 			document.body.classList.add("overflow-hidden");
+			emailDraftBody.focus();
 		};
 
 		const closeEmailDraftPanel = () => {
+			if (isSendingReply) {
+				return;
+			}
 			emailDraftPanel.classList.add("hidden");
 			emailDraftPanel.classList.remove("flex");
 			emailDraftStatus.textContent = "";
 			document.body.classList.remove("overflow-hidden");
+			replyTrigger?.focus();
 		};
 
 		const openNewKeyPanel = () => {
@@ -1653,32 +1686,16 @@ const contactStatusCounts = {
 			};
 		};
 
-		const buildContactReplyMailto = (button) => {
+		const buildContactReplyDraft = (button) => {
 			const customerEmail = button.dataset.contactEmail ?? "";
-			const customerName = button.dataset.contactName ?? "there";
-			const originalMessage = button.dataset.contactMessage ?? "";
 			const subject = "Re: Your message to I Buy Car Keys";
-			const body = [
-				`Hi ${customerName},`,
-				"",
-				"Thank you for reaching out to I Buy Car Keys.",
-				"",
-				"[Add your response here]",
-				"",
-				"If helpful, you can reply directly to this email with any extra details or photos.",
-				"",
-				"Thank you,",
-				"I Buy Car Keys",
-				"",
-				"Original message:",
-				originalMessage,
-			].join("\n");
 
 			return {
+				contactId: button.dataset.contactId ?? "",
 				to: customerEmail,
 				subject,
-				body,
-				href: `mailto:${encodeURIComponent(customerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+				body: "",
+				href: "",
 			};
 		};
 
@@ -1894,21 +1911,62 @@ const contactStatusCounts = {
 			openMailtoDraft(currentEmailDraft.href);
 		});
 
+		emailDraftSend.addEventListener("click", async () => {
+			if (isSendingReply || emailDraftSend.disabled || !currentEmailDraft.contactId) {
+				return;
+			}
+			const message = emailDraftBody.value.trim();
+			emailDraftStatus.classList.remove("text-red-700");
+			emailDraftStatus.classList.add("text-emerald-700");
+			if (!message) {
+				emailDraftStatus.textContent = "Enter your reply before sending.";
+				emailDraftBody.focus();
+				return;
+			}
+
+			const contactId = currentEmailDraft.contactId;
+			isSendingReply = true;
+			emailDraftSend.disabled = true;
+			emailDraftBody.disabled = true;
+			emailDraftSend.textContent = "Sending…";
+			emailDraftStatus.textContent = "Sending your reply…";
+			try {
+				const response = await fetch("/api/admin-contact-reply", {
+					method: "POST",
+					credentials: "same-origin",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ id: contactId, message }),
+				});
+				const result = await response.json();
+				if (!response.ok || !result.emailSent) {
+					throw new Error(result.error || "Could not send your reply.");
+				}
+				if (result.status === "replied") {
+					updateContactRowStatus(contactId, "replied");
+				}
+				emailDraftSend.textContent = "Reply sent";
+				emailDraftStatus.textContent = result.warning || "Your reply was sent and the contact message is marked as replied.";
+				if (result.warning) {
+					emailDraftStatus.classList.replace("text-emerald-700", "text-red-700");
+				}
+			} catch (error) {
+				emailDraftStatus.textContent = error instanceof Error ? error.message : "Could not send your reply.";
+				emailDraftStatus.classList.replace("text-emerald-700", "text-red-700");
+				emailDraftSend.disabled = false;
+				emailDraftBody.disabled = false;
+				emailDraftSend.textContent = "Send reply";
+			} finally {
+				isSendingReply = false;
+			}
+		});
+
 		for (const button of replyContactButtons) {
 			if (!(button instanceof HTMLButtonElement)) {
 				continue;
 			}
 
-			button.addEventListener("click", async () => {
-				const contactId = button.dataset.contactId ?? "";
-				showEmailDraftPanel(buildContactReplyMailto(button));
-				try {
-					await saveContactStatus(contactId, "replied");
-					updateContactRowStatus(contactId, "replied");
-					emailDraftStatus.textContent = "Message marked as replied. Edit the draft as needed before sending.";
-				} catch {
-					emailDraftStatus.textContent = "Reply draft is ready, but the message status could not be updated.";
-				}
+			button.addEventListener("click", () => {
+				showEmailDraftPanel(buildContactReplyDraft(button));
 			});
 		}
 

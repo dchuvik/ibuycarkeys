@@ -1,3 +1,5 @@
+import { escapeHtml, getAdminEmail, sendEmail } from "~/lib/email";
+
 type QuoteEmailStatus = "approved" | "rejected";
 
 type QuoteEmailPayload = {
@@ -9,16 +11,6 @@ type QuoteEmailPayload = {
 	quoteSummary: string;
 	quoteReference: string;
 };
-
-const getEnv = (key: string) => globalThis.process?.env?.[key]?.trim() ?? import.meta.env[key]?.trim?.() ?? "";
-
-const escapeHtml = (value: string) =>
-	value
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
 
 const buildApprovedEmail = (payload: QuoteEmailPayload) => {
 	const customerName = escapeHtml(payload.customerName || "there");
@@ -58,44 +50,14 @@ const buildRejectedEmail = (payload: QuoteEmailPayload) => {
 };
 
 export const sendQuoteStatusEmail = async (payload: QuoteEmailPayload) => {
-	const apiKey = getEnv("RESEND_API_KEY");
-	const from = getEnv("RESEND_FROM");
-	const adminEmail = getEnv("ADMIN_EMAIL");
-
-	if (!apiKey || !from) {
-		return { sent: false, error: "Resend is not configured." };
-	}
-
 	if (!payload.customerEmail) {
 		return { sent: false, error: "Customer email is missing." };
 	}
 
 	const email = payload.status === "approved" ? buildApprovedEmail(payload) : buildRejectedEmail(payload);
-	const response = await fetch("https://api.resend.com/emails", {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${apiKey}`,
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			from,
-			to: [payload.customerEmail],
-			...(adminEmail ? { bcc: [adminEmail] } : {}),
-			subject: email.subject,
-			html: email.html,
-		}),
+	return sendEmail({
+		to: payload.customerEmail,
+		bcc: getAdminEmail(),
+		...email,
 	});
-
-	if (!response.ok) {
-		let message = "Resend could not send the email.";
-		try {
-			const errorPayload = await response.json();
-			message = errorPayload.message ?? errorPayload.error ?? message;
-		} catch {
-			// Keep the generic message if Resend did not return JSON.
-		}
-		return { sent: false, error: message };
-	}
-
-	return { sent: true, error: "" };
 };

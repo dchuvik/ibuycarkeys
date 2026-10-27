@@ -1,4 +1,6 @@
 import type { APIRoute } from "astro";
+import { randomUUID } from "node:crypto";
+import { sendContactNotificationEmail } from "~/lib/contactEmails";
 import { supabase } from "~/lib/supabase";
 import { supabaseTables } from "~/lib/supabaseTables";
 
@@ -42,7 +44,16 @@ export const POST: APIRoute = async ({ request }) => {
 		});
 	}
 
+	if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || message.length > 10_000) {
+		return createResponse(request, "/contact/?error=invalid-fields", 400, {
+			error: "Enter a valid email address and a message of up to 10,000 characters.",
+			ok: false,
+		});
+	}
+
+	const contactId = randomUUID();
 	const { error } = await supabase.from(supabaseTables.contactMessages).insert({
+		id: contactId,
 		first_name: firstName,
 		last_name: lastName,
 		email,
@@ -60,6 +71,17 @@ export const POST: APIRoute = async ({ request }) => {
 			error: "Could not save your message.",
 			ok: false,
 		});
+	}
+
+	const notification = await sendContactNotificationEmail({
+		contactId,
+		customerName: `${firstName} ${lastName}`,
+		customerEmail: email,
+		phoneNumber,
+		originalMessage: message,
+	});
+	if (!notification.sent) {
+		console.warn("Contact message saved, but its email notification was not sent:", notification.error);
 	}
 
 	return createResponse(request, "/contact/?submitted=true", 200, { ok: true });
