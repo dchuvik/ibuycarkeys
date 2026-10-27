@@ -19,6 +19,7 @@ export const loadModule = async (entry, { mocks = {}, fetch, console: logger } =
 			platform: "node",
 			format: "cjs",
 			target: "node20",
+			external: ["jspdf"],
 			plugins: [{
 				name: "test-service-mocks",
 				setup(builder) {

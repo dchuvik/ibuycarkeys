@@ -128,4 +128,24 @@ test("quote approval and rejection still send their existing templates and admin
 	assert.match(requests[0].html, /&lt;script&gt;/);
 	assert.match(requests[1].subject, /Update/);
 	assert.deepEqual(requests[0].bcc, ["admin@example.com"]);
+	assert.equal(requests[0].reply_to, "admin@example.com");
+	assert.equal(requests[0].attachments.length, 1);
+	assert.equal(requests[0].attachments[0].filename, "ibuycarkeys-invoice-12345678.pdf");
+	assert.equal(requests[0].attachments[0].content_type, "application/pdf");
+	assert.ok(Buffer.from(requests[0].attachments[0].content, "base64").toString("latin1").startsWith("%PDF-"));
+	assert.ok(requests[0].html.includes("invoice is attached"));
+	assert.equal("attachments" in requests[1], false);
+});
+
+test("approval does not send an email if invoice generation fails", async () => {
+	const { sendQuoteStatusEmail } = await loadModule("src/lib/quoteEmails.ts", { mocks: {
+		"astro:env/server": { getSecret: (key) => configured[key] },
+		"~/lib/quoteInvoice": { createQuoteInvoice: () => { throw new Error("PDF failure"); } },
+	} });
+	const result = await sendQuoteStatusEmail({
+		...contact, status: "approved", quoteReference: "12345678",
+		estimatedPayout: "$50", totalKeys: "2", quoteSummary: "Example keys",
+	});
+	assert.equal(result.sent, false);
+	assert.match(result.error, /Could not create the PDF invoice/);
 });
