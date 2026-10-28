@@ -6,12 +6,9 @@ import Container from "~/components/Container.astro";
 import Heading from "~/components/Heading.astro";
 import Button from "~/components/Button.astro";
 import KeyQuoteBuilder from "~/components/forms/KeyQuoteBuilder.astro";
-import { getPriceCatalog, getPriceCatalogMakes } from "~/data/priceCatalog";
 import heroKeys from "~/assets/images/car-key-quote-hero.png";
 import { getAccountProfile, getAccountUser } from "~/lib/accountAuth";
 
-const priceCatalog = await getPriceCatalog();
-const priceCatalogMakes = await getPriceCatalogMakes();
 const accountUser = await getAccountUser(Astro.cookies, Astro.url.protocol === "https:");
 const accountProfile = accountUser ? await getAccountProfile(accountUser.id) : null;
 ---
@@ -69,11 +66,11 @@ const accountProfile = accountUser ? await getAccountProfile(accountUser.id) : n
 					</div>
 					<div class="absolute -bottom-5 left-5 right-5 grid grid-cols-3 divide-x divide-slate-200 rounded-2xl bg-white p-4 text-gray-900 shadow-2xl sm:left-8 sm:right-auto sm:min-w-[30rem] sm:p-5">
 						<div class="px-3 sm:px-5">
-							<p class="text-2xl font-black tracking-tight sm:text-3xl">{priceCatalogMakes.length}</p>
+							<p id="catalog-total-makes" class="text-2xl font-black tracking-tight sm:text-3xl" aria-label="Loading make count">&mdash;</p>
 							<p class="mt-1 text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 sm:text-xs">Makes</p>
 						</div>
 						<div class="px-3 sm:px-5">
-							<p class="text-2xl font-black tracking-tight sm:text-3xl">{priceCatalog.length}</p>
+							<p id="catalog-total-keys" class="text-2xl font-black tracking-tight sm:text-3xl" aria-label="Loading key count">&mdash;</p>
 							<p class="mt-1 text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 sm:text-xs">Keys listed</p>
 						</div>
 						<div class="px-3 sm:px-5">

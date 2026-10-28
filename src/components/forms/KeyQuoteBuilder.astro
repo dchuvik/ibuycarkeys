@@ -1,9 +1,7 @@
 ---
-import { getPriceCatalog } from "~/data/priceCatalog";
 import PriceCatalog from "../PriceCatalog.astro";
 import type { AccountProfile } from "~/lib/accountAuth";
 
-const priceCatalog = await getPriceCatalog();
 const { accountProfile = null, isSignedIn = false } = Astro.props as {
 	accountProfile?: AccountProfile | null;
 	isSignedIn?: boolean;
@@ -187,13 +185,13 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 			</div>
 			<div class="rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200">
 				<p class="text-xs font-semibold uppercase tracking-[0.16em] text-sky-800">Browse results</p>
-				<p id="catalog-results-count" class="mt-1 text-sm text-gray-700">{priceCatalog.length} catalog items</p>
+				<p id="catalog-results-count" class="mt-1 text-sm text-gray-700">Loading keys...</p>
 			</div>
 		</div>
 
 		<form id="key-quote-form" class="space-y-5">
 			<div class="space-y-5">
-				<PriceCatalog scrollClass="max-h-[56rem]" showHeader={false} />
+				<PriceCatalog scrollClass="h-[56rem]" showHeader={false} />
 
 				<div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
 					<div id="current-line-payout" class="rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200 lg:p-6">
@@ -312,23 +310,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 
 			<div class="hidden">
 				<label for="sku-select">Matching price list item</label>
-				<select id="sku-select" name="sku" required size="8" class="min-h-64">
-					{
-						priceCatalog.map((item) => (
-							<option
-								value={item.sku}
-								data-make={item.make}
-								data-description={item.description.toLowerCase()}
-								data-description-label={item.description}
-								data-price={item.price}
-								data-light-scratches-price={item.lightScratchesPrice ?? ""}
-								data-worn-price={item.wornPrice ?? ""}
-							>
-								{item.sku} | {item.description}
-							</option>
-						))
-					}
-				</select>
+				<select id="sku-select" name="sku"></select>
 			</div>
 		</form>
 	</div>
@@ -336,6 +318,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 
 <script>
 	import { showToast } from "~/lib/toast";
+	import { isCatalogItem, type CatalogItem } from "~/lib/catalog";
 	document.addEventListener("astro:page-load", () => {
 		const storageKey = "key-quote-cart";
 		const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -441,6 +424,10 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 		) {
 			return;
 		}
+		if (form.dataset.quoteInitialized) return;
+		form.dataset.quoteInitialized = "true";
+		const lifecycle = new AbortController();
+		document.addEventListener("astro:before-swap", () => lifecycle.abort(), { once: true });
 
 		const openQuoteRequest = () => {
 			quoteRequestForm.classList.remove("hidden");
@@ -709,17 +696,24 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 		conditionField.addEventListener("change", updatePreview);
 		quantityField.addEventListener("input", updatePreview);
 		document.addEventListener("key-catalog-select", (event) => {
-			const customEvent = event as CustomEvent<{ sku?: string; condition?: string }>;
+			const customEvent = event as CustomEvent<{ sku?: string; condition?: string; item?: CatalogItem }>;
 			const selectedSku = customEvent.detail?.sku;
 			const selectedCondition = customEvent.detail?.condition;
 			if (!selectedSku) {
 				return;
 			}
 
-			const matchingOption = Array.from(skuSelect.options).find((option) => option.value === selectedSku);
-			if (!matchingOption) {
-				return;
-			}
+			const item = customEvent.detail?.item;
+			if (!isCatalogItem(item) || item.sku !== selectedSku) return;
+			const option = document.createElement("option");
+			option.value = item.sku;
+			option.textContent = `${item.sku} | ${item.description}`;
+			option.dataset.make = item.make;
+			option.dataset.descriptionLabel = item.description;
+			option.dataset.price = String(item.price);
+			option.dataset.lightScratchesPrice = item.lightScratchesPrice === null ? "" : String(item.lightScratchesPrice);
+			option.dataset.wornPrice = item.wornPrice === null ? "" : String(item.wornPrice);
+			skuSelect.replaceChildren(option);
 
 			skuSelect.value = selectedSku;
 			if (selectedCondition && Array.from(conditionField.options).some((option) => option.value === selectedCondition)) {
@@ -727,7 +721,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 			}
 			skuSelect.dispatchEvent(new Event("change"));
 			currentLinePayout.scrollIntoView({ block: "start", behavior: "smooth" });
-		});
+		}, { signal: lifecycle.signal });
 
 		form.addEventListener("submit", (event) => {
 			event.preventDefault();
@@ -946,7 +940,7 @@ const { accountProfile = null, isSignedIn = false } = Astro.props as {
 			if (event.key === "Escape" && quoteRequestForm.classList.contains("flex")) {
 				closeQuoteRequest();
 			}
-		});
+		}, { signal: lifecycle.signal });
 
 		skuSelect.selectedIndex = -1;
 		conditionField.value = "excellent";

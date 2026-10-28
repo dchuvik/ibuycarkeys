@@ -403,8 +403,9 @@ const mapSupabaseCatalogRow = (item: Record<string, unknown>): PriceCatalogItem 
 	active: Boolean(item.active),
 });
 
-export const getPriceCatalog = async () => {
+export const getPriceCatalog = async ({ fallbackOnError = true } = {}) => {
 	if (!isSupabaseAdminConfigured()) {
+		if (!fallbackOnError) throw new Error("Catalog is not configured.");
 		return defaultPriceCatalog;
 	}
 
@@ -418,11 +419,12 @@ export const getPriceCatalog = async () => {
 			.order("sku", { ascending: true });
 
 		if (error) {
-			return defaultPriceCatalog;
+			throw new Error("Could not load the key catalog.");
 		}
 
 		return (data ?? []).map((item) => mapSupabaseCatalogRow(item));
 	} catch {
+		if (!fallbackOnError) throw new Error("Could not load the key catalog.");
 		return defaultPriceCatalog;
 	}
 };
