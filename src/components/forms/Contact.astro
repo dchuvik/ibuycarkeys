@@ -1,4 +1,7 @@
 ---
+import { getContactProtection } from "~/lib/contactProtection";
+const protection = getContactProtection();
+const protectionUnavailable = protection.enabled && !protection.configured;
 const wasSubmitted = Astro.url.searchParams.get("submitted") === "true";
 const hasError = Astro.url.searchParams.has("error");
 ---
@@ -64,14 +67,25 @@ const hasError = Astro.url.searchParams.has("error");
 			</div>
 		</div>
 	</div>
+	{protection.configured && (
+		<div class="mt-6">
+			<div id="contact-challenge" data-sitekey={protection.siteKey}></div>
+			<p id="contact-challenge-status" class="mt-2 text-sm text-gray-700" role="status">Checking your browser...</p>
+			<noscript><p>Please enable JavaScript to complete the security check and send your message.</p></noscript>
+		</div>
+	)}
+	{protectionUnavailable && (
+		<p role="alert" class="mt-6 text-sm text-red-700">The security check is temporarily unavailable. Please try again shortly.</p>
+	)}
 	<div class="mt-8 flex justify-end">
-		<button type="submit" class="button button-yellow">Send message</button>
+		<button type="submit" class="button button-yellow" disabled={protectionUnavailable}>Send message</button>
 	</div>
 </form>
 <p id="contact-form-status" class="mt-4 text-sm text-gray-700"></p>
 
 <script>
 	import { showToast } from "~/lib/toast";
+	import { mountContactChallenge } from "~/lib/contactChallenge";
 	document.addEventListener("astro:page-load", () => {
 		const form = document.getElementById("contact-form");
 		const timezoneField = document.getElementById("contact-client-timezone");
@@ -86,6 +100,12 @@ const hasError = Astro.url.searchParams.has("error");
 		) {
 			return;
 		}
+		if (form.dataset.contactInitialized) return;
+		form.dataset.contactInitialized = "true";
+		const challengeContainer = document.getElementById("contact-challenge");
+		const challenge = challengeContainer instanceof HTMLElement
+			? mountContactChallenge(challengeContainer, document.getElementById("contact-challenge-status")) : null;
+		document.addEventListener("astro:before-swap", () => challenge?.destroy(), { once: true });
 
 		timezoneField.value = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
 		utcOffsetField.value = String(new Date().getTimezoneOffset() * -1);
@@ -95,6 +115,10 @@ const hasError = Astro.url.searchParams.has("error");
 			event.preventDefault();
 
 			if (isSubmitting || !form.reportValidity()) {
+				return;
+			}
+			if (challenge && !challenge.isComplete()) {
+				showToast("Please complete the security check below before sending your message.", { kind: "error", id: "contact-submit" });
 				return;
 			}
 			isSubmitting = true;
@@ -140,6 +164,8 @@ const hasError = Astro.url.searchParams.has("error");
 				showToast(message, { kind: "error", id: "contact-submit" });
 				if (status) status.textContent = message;
 			} finally {
+				// Tokens are single-use, including when saving fails after verification.
+				challenge?.reset();
 				isSubmitting = false;
 				if (submitButton instanceof HTMLButtonElement) {
 					submitButton.disabled = false;

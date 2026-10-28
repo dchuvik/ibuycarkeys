@@ -113,6 +113,35 @@ names over 100 characters, and phone numbers over 50 characters before saving or
 International names and links in the message body are allowed. These checks reduce basic
 bot spam; they do not identify every marketing submission. Existing messages are retained.
 
+### Contact bot protection (Cloudflare Turnstile)
+
+Create a free [Turnstile widget](https://developers.cloudflare.com/turnstile/get-started/widget-management/dashboard/)
+in Cloudflare with **Managed** mode, hostname `ibuycarkeys.com`, and pre-clearance disabled.
+This does not require changing DNS, nameservers, or Netlify hosting.
+Add both environment variables to Netlify's **Production** context and include **Functions** scope:
+
+```text
+TURNSTILE_SITE_KEY=the_widget_site_key
+TURNSTILE_SECRET_KEY=the_widget_secret_key
+```
+
+The site key is public; leave **Contains secret values** unchecked for it. Keep the secret key
+marked secret. Redeploy after saving both. For a different host, add that hostname to the widget;
+configure preview contexts separately with a separate widget if needed. Keep production keys
+out of untrusted deploy previews. No key belongs in Git or a chat message.
+
+Until either key is set, the existing honeypot and field checks remain active without Turnstile.
+Once either is set, incomplete configuration blocks submissions instead of bypassing protection.
+Both keys enable a browser challenge on the contact form. The server verifies each single-use
+token with Cloudflare and checks the hostname and `contact` action **before** saving a message
+or sending an alert. Missing, invalid, or expired tokens and verification outages cannot save
+or send. The browser preserves entered text on failure and refreshes the challenge after an
+attempt so a consumed token can be retried. JavaScript is required when Turnstile is enabled.
+
+Turnstile reduces automated abuse; it does not classify marketing or prevent every human
+submission. Existing messages are not removed, and customer messages are not filtered by
+language, email provider, or broad keywords.
+
 In **Admin > Contact form**, click **Reply**, enter your response, and choose **Send reply**.
 The server uses the saved contact's email address, includes the original message, and marks
 the message as **replied** only after Resend accepts the email. Opening or closing the draft
