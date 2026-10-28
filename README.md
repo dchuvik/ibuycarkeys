@@ -166,6 +166,26 @@ navigation. Success notices dismiss after eight seconds, with the timer paused d
 hover or keyboard focus; warnings and errors remain until dismissed. Failed contact
 submissions retain the entered message for retry. Permanent deletions still require confirmation.
 
+## Public catalog loading
+
+The homepage renders its shell, quote builder, saved-cart controls, and catalog placeholders
+without reading the catalog database. After the first browser frame, the catalog automatically
+loads all active keys from `/api/key-catalog.json`. That endpoint performs one catalog read and
+returns only public product fields; inventory and account data are excluded. Successful data
+is cached by the browser and Netlify CDN for 60 seconds and supports ETag revalidation.
+Catalog edits may take up to a minute to appear in a freshly requested catalog. An already
+open page keeps its loaded list until navigation or refresh.
+
+Search, make/type filters, and price sorting operate on the entire dataset before rendering.
+The view initially creates 30 cards and appends batches of 30 automatically near the bottom
+of its scroll area. Images are lazy loaded with reserved dimensions. There is no Load more
+button. Key selection passes one product to the quote builder rather than embedding a second
+copy of every item in a hidden select. Homepage make/key statistics update from the same data.
+
+If data cannot be loaded, the catalog shows an error and a retry control; the saved quote cart
+remains usable. Errors are not cached, and a failed live catalog read never substitutes sample
+prices. Event handlers and observers are cleaned up during Astro client navigation.
+
 ## 📂 Project Structure
 
 Inside of your HyperDrive project, you'll see the following folders and files:
