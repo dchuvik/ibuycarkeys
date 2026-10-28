@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { randomUUID } from "node:crypto";
 import { sendContactNotificationEmail } from "~/lib/contactEmails";
+import { verifyContactChallenge } from "~/lib/contactProtection";
 import { supabase } from "~/lib/supabase";
 import { supabaseTables } from "~/lib/supabaseTables";
 
@@ -69,6 +70,17 @@ export const POST: APIRoute = async ({ request }) => {
 	) {
 		return createResponse(request, "/contact/?error=invalid-fields", 400, {
 			error: "Use names of up to 100 characters without HTML or links, a valid email address, a phone number of up to 50 characters, and a message of up to 10,000 characters.",
+			ok: false,
+		});
+	}
+
+	const verification = await verifyContactChallenge(
+		getFieldValue(formData, "cf-turnstile-response"),
+		new URL(request.url).hostname,
+	);
+	if (!verification.ok) {
+		return createResponse(request, "/contact/?error=security-check", verification.status, {
+			error: verification.error,
 			ok: false,
 		});
 	}

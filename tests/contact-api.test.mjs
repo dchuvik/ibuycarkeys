@@ -110,6 +110,7 @@ const loadSubmission = async (options = {}) => {
 	const calls = [];
 	let saved;
 	const { POST } = await loadModule("src/pages/api/contact-request.json.ts", { mocks: {
+		"astro:env/server": { getSecret: () => undefined },
 		"~/lib/supabase": { supabase: { from: () => ({ insert: async (row) => { calls.push("save"); saved = row; return { error: options.saveError ?? null }; } }) } },
 		"~/lib/contactEmails": { sendContactNotificationEmail: async (payload) => {
 			calls.push("notify");
