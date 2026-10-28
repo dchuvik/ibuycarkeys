@@ -1,21 +1,23 @@
 type TurnstileApi = {
-	ready: (callback: () => void) => void;
 	render: (container: HTMLElement, options: Record<string, unknown>) => string;
 	reset: (widget: string) => void;
 	remove: (widget: string) => void;
 };
 
 declare global {
-	interface Window { turnstile?: TurnstileApi }
+	interface Window {
+		turnstile?: TurnstileApi;
+		onContactTurnstileLoad?: () => void;
+	}
 }
 
 let loading: Promise<TurnstileApi> | undefined;
 const loadTurnstile = (): Promise<TurnstileApi> => {
-	if (window.turnstile) return new Promise((resolve) => window.turnstile!.ready(() => resolve(window.turnstile!)));
 	if (loading) return loading;
+	if (window.turnstile) return Promise.resolve(window.turnstile);
 	loading = new Promise<TurnstileApi>((resolve, reject) => {
 		const script = document.createElement("script");
-		script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+		script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onContactTurnstileLoad";
 		script.async = true;
 		const timeout = window.setTimeout(() => fail(), 15_000);
 		const fail = () => {
@@ -24,12 +26,11 @@ const loadTurnstile = (): Promise<TurnstileApi> => {
 			reject(new Error("Security check could not load."));
 		};
 		script.onerror = fail;
-		script.onload = () => {
+		// Cloudflare requires an onload callback for async scripts; ready() is synchronous-script only.
+		window.onContactTurnstileLoad = () => {
 			if (!window.turnstile) return fail();
-			window.turnstile.ready(() => {
-				window.clearTimeout(timeout);
-				resolve(window.turnstile!);
-			});
+			window.clearTimeout(timeout);
+			resolve(window.turnstile);
 		};
 		document.head.append(script);
 	}).catch((error) => { loading = undefined; throw error; });

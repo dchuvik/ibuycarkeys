@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 const builds = new Map();
 
 // Compile the real server modules, replacing only external services. Never load .env or send mail.
-export const loadModule = async (entry, { mocks = {}, fetch, console: logger } = {}) => {
+export const loadModule = async (entry, { mocks = {}, fetch, console: logger, globals = {} } = {}) => {
 	const key = JSON.stringify([entry, Object.keys(mocks).sort()]);
 	if (!builds.has(key)) {
 		builds.set(key, build({
@@ -45,6 +45,7 @@ export const loadModule = async (entry, { mocks = {}, fetch, console: logger } =
 		URLSearchParams,
 		FormData,
 		AbortSignal,
+		...globals,
 	};
 	vm.runInNewContext(await builds.get(key), context);
 	return context.module.exports;
